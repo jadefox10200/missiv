@@ -7,7 +7,7 @@ Missiv is a secure, self-hostable messaging application that evolved from the zc
 - **End-to-End Encryption**: Uses Curve25519 for secure communication
 - **Immutable Messaging**: Messages (called "mivs") are immutable once sent
 - **Phone-Number-Style IDs**: Simple, memorable identifiers for users
-- **State Management**: Mivs are organized by state (IN/PENDING/OUT/ARCHIVED)
+- **State Management**: Mivs are organized by state (IN/PENDING/OUT/UNANSWERED/ARCHIVED)
 - **Self-Hosting**: Run your own instance for complete control
 - **Offline Support**: Designed to work offline with sync capabilities
 - **Clean Interface**: Email-like UX for intuitive message management
@@ -87,6 +87,7 @@ The production build will be available in `frontend/build/`.
 - `GET /api/mivs/inbox` - Get inbox mivs (state: IN)
 - `GET /api/mivs/pending` - Get pending mivs (state: PENDING)
 - `GET /api/mivs/sent` - Get sent mivs (state: OUT)
+- `GET /api/mivs/unanswered` - Get unanswered mivs (state: UNANSWERED)
 - `GET /api/mivs/archived` - Get archived mivs (state: ARCHIVED)
 
 ### Identity
@@ -97,9 +98,10 @@ The production build will be available in `frontend/build/`.
 ## Miv States
 
 - **IN**: Received mivs in your inbox
-- **PENDING**: Mivs being sent (queued or in-progress)
-- **OUT**: Successfully sent mivs
-- **ARCHIVED**: Archived mivs (inbox or sent)
+- **PENDING**: Mivs I have looked at but not answered (automatically moved after opening to read)
+- **OUT**: Sent mivs, no read receipt yet
+- **UNANSWERED**: Mivs that have been read by recipient but not answered (read receipt received)
+- **ARCHIVED**: Conversations that have ended but can still be reviewed
 
 ## Security
 

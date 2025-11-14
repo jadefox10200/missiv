@@ -6,10 +6,11 @@ import "time"
 type MivState string
 
 const (
-	StateIN       MivState = "IN"       // Received mivs in inbox
-	StatePENDING  MivState = "PENDING"  // Mivs being sent
-	StateOUT      MivState = "OUT"      // Successfully sent mivs
-	StateARCHIVED MivState = "ARCHIVED" // Archived mivs
+	StateIN         MivState = "IN"         // Received mivs in your inbox
+	StatePENDING    MivState = "PENDING"    // Mivs I have looked at but not answered (automatically moved after opening to read)
+	StateOUT        MivState = "OUT"        // Sent mivs, no read receipt yet
+	StateUNANSWERED MivState = "UNANSWERED" // Mivs that have been read by recipient but not answered (read receipt received)
+	StateARCHIVED   MivState = "ARCHIVED"   // Conversations that have ended but can still be reviewed
 )
 
 // Miv represents a message in the Missiv system

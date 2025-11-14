@@ -1,4 +1,4 @@
-export type MivState = 'IN' | 'PENDING' | 'OUT' | 'ARCHIVED';
+export type MivState = 'IN' | 'PENDING' | 'OUT' | 'UNANSWERED' | 'ARCHIVED';
 
 export interface Miv {
   id: string;
