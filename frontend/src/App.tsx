@@ -26,6 +26,7 @@ function App() {
     if (identity) {
       loadMivs();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView, identity]);
 
   const loadIdentity = async () => {
