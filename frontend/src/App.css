@@ -18,8 +18,7 @@ body {
   background: #f5f5f5;
 }
 
-.app.loading,
-.app.identity-setup {
+.app.loading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -28,74 +27,8 @@ body {
   font-size: 20px;
 }
 
-.identity-setup-card {
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  max-width: 400px;
-  width: 90%;
-}
-
-.identity-setup-card h1 {
-  color: #333;
-  margin-bottom: 16px;
-  font-size: 32px;
-}
-
-.identity-setup-card p {
-  color: #666;
-  margin-bottom: 24px;
-  font-size: 16px;
-}
-
-.identity-setup-card .form-group {
-  margin-bottom: 24px;
-}
-
-.identity-setup-card input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-.identity-setup-card input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.identity-setup-card .btn {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.identity-setup-card .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.identity-setup-card .btn-primary:hover {
-  opacity: 0.9;
-}
-
-.identity-setup-card .error-message {
-  background-color: #ffebee;
-  color: #c62828;
-  padding: 12px;
-  border-radius: 4px;
-  margin-bottom: 16px;
-  font-size: 14px;
-}
-
 .sidebar {
-  width: 250px;
+  width: 280px;
   background: #2c3e50;
   color: white;
   display: flex;
@@ -103,7 +36,7 @@ body {
 }
 
 .sidebar-header {
-  padding: 24px;
+  padding: 24px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -126,10 +59,9 @@ body {
   margin-bottom: 4px;
 }
 
-.user-id {
+.user-username {
   font-size: 12px;
   color: #95a5a6;
-  font-family: 'Courier New', monospace;
 }
 
 .compose-btn {
@@ -138,7 +70,7 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -153,7 +85,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 8px;
+  padding: 8px 16px;
 }
 
 .nav-menu button {
@@ -164,9 +96,12 @@ body {
   text-align: left;
   font-size: 14px;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
   margin-bottom: 4px;
   transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .nav-menu button:hover {
@@ -178,19 +113,103 @@ body {
   font-weight: 600;
 }
 
+.nav-menu .badge {
+  background: #e74c3c;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-logout {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  color: #ecf0f1;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-logout:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
 .main-content {
   flex: 1;
   display: flex;
   overflow: hidden;
 }
 
-.miv-list-container {
-  width: 350px;
-  border-right: 1px solid #e0e0e0;
+.conversation-list-container {
+  width: 400px;
+  border-right: 1px solid #dee2e6;
   background: white;
+  overflow: hidden;
 }
 
-.miv-detail-container {
+.conversation-thread-container {
   flex: 1;
   background: white;
+  overflow: hidden;
 }
+
+.notifications-view {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background: #f8f9fa;
+}
+
+.empty-conversation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #868e96;
+}
+
+.empty-conversation p {
+  font-size: 16px;
+}
+
+/* Button styles */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn:not(.btn-primary) {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.btn:not(.btn-primary):hover {
+  background: #dee2e6;
+}
+

@@ -1,0 +1,113 @@
+.conversation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: #f1f3f5;
+  overflow-y: auto;
+}
+
+.conversation-list.empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  background: white;
+}
+
+.empty-state {
+  text-align: center;
+  color: #868e96;
+}
+
+.empty-state p {
+  margin: 8px 0;
+}
+
+.empty-hint {
+  font-size: 14px;
+}
+
+.conversation-item {
+  background: white;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.conversation-item:hover {
+  background: #f8f9fa;
+}
+
+.conversation-item.selected {
+  background: #e7f3ff;
+  border-left-color: #667eea;
+}
+
+.conversation-item.unread {
+  background: #fffaf0;
+}
+
+.conversation-item.unread.selected {
+  background: #e7f3ff;
+}
+
+.conversation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.conversation-subject {
+  font-weight: 600;
+  font-size: 15px;
+  color: #212529;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 12px;
+}
+
+.conversation-item.unread .conversation-subject {
+  color: #0066cc;
+}
+
+.conversation-time {
+  font-size: 12px;
+  color: #868e96;
+  white-space: nowrap;
+}
+
+.conversation-preview {
+  font-size: 14px;
+  color: #495057;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.conversation-count {
+  font-size: 12px;
+  color: #868e96;
+}
+
+.unread-badge {
+  background: #667eea;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+}
