@@ -62,6 +62,7 @@ func (s *Server) setupRoutes() {
 		api.GET("/mivs/inbox", s.getInbox)
 		api.GET("/mivs/pending", s.getPending)
 		api.GET("/mivs/sent", s.getSent)
+		api.GET("/mivs/unanswered", s.getUnanswered)
 		api.GET("/mivs/archived", s.getArchived)
 	}
 	
@@ -237,6 +238,16 @@ func (s *Server) getPending(c *gin.Context) {
 
 func (s *Server) getSent(c *gin.Context) {
 	mivs, err := s.storage.ListMivs(models.StateOUT)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	c.JSON(http.StatusOK, mivs)
+}
+
+func (s *Server) getUnanswered(c *gin.Context) {
+	mivs, err := s.storage.ListMivs(models.StateUNANSWERED)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
