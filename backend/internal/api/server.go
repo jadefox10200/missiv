@@ -47,12 +47,31 @@ func (s *Server) setupRoutes() {
 	
 	api := s.router.Group("/api")
 	{
-		// Identity endpoints
+		// Account endpoints (authentication)
+		api.POST("/accounts/register", s.registerAccount)
+		api.POST("/accounts/login", s.loginAccount)
+		
+		// Desk endpoints
+		api.GET("/desks", s.listDesks)
+		api.POST("/desks", s.createDesk)
+		api.POST("/desks/switch", s.switchDesk)
+		
+		// Conversation endpoints
+		api.GET("/conversations", s.listConversations)
+		api.GET("/conversations/:id", s.getConversation)
+		api.POST("/conversations", s.createConversation)
+		api.POST("/conversations/:id/reply", s.replyToConversation)
+		
+		// Notification endpoints
+		api.GET("/notifications", s.listNotifications)
+		api.POST("/notifications/:id/read", s.markNotificationAsRead)
+		
+		// Legacy Identity endpoints (for backward compatibility)
 		api.GET("/identity", s.getIdentity)
 		api.POST("/identity", s.createIdentity)
 		api.GET("/identity/publickey", s.getPublicKey)
 		
-		// Miv endpoints
+		// Legacy Miv endpoints (for backward compatibility)
 		api.GET("/mivs", s.listMivs)
 		api.GET("/mivs/:id", s.getMiv)
 		api.POST("/mivs", s.createMiv)
