@@ -36,7 +36,7 @@ function ConversationList({
     }
   };
 
-  if (conversations.length === 0) {
+  if (!conversations || conversations.length === 0) {
     return (
       <div className="conversation-list empty">
         <div className="empty-state">
