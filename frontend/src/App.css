@@ -86,6 +86,21 @@ body {
   display: flex;
   flex-direction: column;
   padding: 8px 16px;
+  overflow-y: auto;
+}
+
+.nav-section {
+  margin-bottom: 20px;
+}
+
+.nav-section h4 {
+  color: #95a5a6;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 16px;
+  margin-bottom: 4px;
 }
 
 .nav-menu button {
@@ -163,6 +178,32 @@ body {
   flex: 1;
   background: white;
   overflow: hidden;
+}
+
+/* Basket view containers */
+.basket-list-container {
+  width: 400px;
+  border-right: 1px solid #dee2e6;
+  background: white;
+  overflow: hidden;
+}
+
+.basket-detail-container {
+  flex: 1;
+  background: white;
+  overflow: hidden;
+}
+
+.empty-selection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #868e96;
+}
+
+.empty-selection p {
+  font-size: 16px;
 }
 
 .notifications-view {
