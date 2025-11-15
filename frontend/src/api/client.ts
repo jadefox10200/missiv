@@ -1,4 +1,21 @@
-import { Miv, Identity, CreateMivRequest, UpdateStateRequest } from '../types';
+import { 
+  Miv, 
+  Identity, 
+  CreateMivRequest, 
+  UpdateStateRequest,
+  Account,
+  Desk,
+  RegisterRequest,
+  LoginRequest,
+  LoginResponse,
+  CreateDeskRequest,
+  SwitchDeskRequest,
+  ListConversationsResponse,
+  GetConversationResponse,
+  CreateConversationRequest,
+  ReplyToConversationRequest,
+  ListNotificationsResponse,
+} from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
@@ -109,4 +126,149 @@ export const getArchived = async (): Promise<Miv[]> => {
     throw new Error('Failed to fetch archived mivs');
   }
   return response.json();
+};
+
+// Account API
+
+export const register = async (request: RegisterRequest): Promise<LoginResponse> => {
+  const response = await fetch(`${API_BASE_URL}/accounts/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to register');
+  }
+  return response.json();
+};
+
+export const login = async (request: LoginRequest): Promise<LoginResponse> => {
+  const response = await fetch(`${API_BASE_URL}/accounts/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to login');
+  }
+  return response.json();
+};
+
+// Desk API
+
+export const listDesks = async (accountId: string): Promise<Desk[]> => {
+  const response = await fetch(`${API_BASE_URL}/desks?account_id=${accountId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch desks');
+  }
+  return response.json();
+};
+
+export const createDesk = async (accountId: string, request: CreateDeskRequest): Promise<Desk> => {
+  const response = await fetch(`${API_BASE_URL}/desks?account_id=${accountId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create desk');
+  }
+  return response.json();
+};
+
+export const switchDesk = async (accountId: string, request: SwitchDeskRequest): Promise<Account> => {
+  const response = await fetch(`${API_BASE_URL}/desks/switch?account_id=${accountId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to switch desk');
+  }
+  return response.json();
+};
+
+// Conversation API
+
+export const listConversations = async (deskId: string): Promise<ListConversationsResponse> => {
+  const response = await fetch(`${API_BASE_URL}/conversations?desk_id=${deskId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch conversations');
+  }
+  return response.json();
+};
+
+export const getConversation = async (id: string): Promise<GetConversationResponse> => {
+  const response = await fetch(`${API_BASE_URL}/conversations/${id}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch conversation');
+  }
+  return response.json();
+};
+
+export const createConversation = async (
+  deskId: string,
+  request: CreateConversationRequest
+): Promise<GetConversationResponse> => {
+  const response = await fetch(`${API_BASE_URL}/conversations?desk_id=${deskId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create conversation');
+  }
+  return response.json();
+};
+
+export const replyToConversation = async (
+  conversationId: string,
+  deskId: string,
+  request: ReplyToConversationRequest
+): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}/reply?desk_id=${deskId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to reply to conversation');
+  }
+};
+
+// Notification API
+
+export const listNotifications = async (deskId: string, unreadOnly: boolean = false): Promise<ListNotificationsResponse> => {
+  const url = `${API_BASE_URL}/notifications?desk_id=${deskId}${unreadOnly ? '&unread_only=true' : ''}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch notifications');
+  }
+  return response.json();
+};
+
+export const markNotificationAsRead = async (notificationId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}/read`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to mark notification as read');
+  }
 };
