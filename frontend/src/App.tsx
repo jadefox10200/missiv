@@ -6,7 +6,7 @@ import { Miv, CreateMivRequest, Identity } from './types';
 import * as api from './api/client';
 import './App.css';
 
-type View = 'inbox' | 'pending' | 'sent' | 'archived' | 'compose';
+type View = 'inbox' | 'pending' | 'sent' | 'unanswered' | 'archived' | 'compose';
 
 function App() {
   const [identity, setIdentity] = useState<Identity | null>(null);
@@ -68,6 +68,9 @@ function App() {
           break;
         case 'sent':
           data = await api.getSent();
+          break;
+        case 'unanswered':
+          data = await api.getUnanswered();
           break;
         case 'archived':
           data = await api.getArchived();
@@ -172,6 +175,12 @@ function App() {
             onClick={() => setCurrentView('sent')}
           >
             📤 Sent
+          </button>
+          <button
+            className={currentView === 'unanswered' ? 'active' : ''}
+            onClick={() => setCurrentView('unanswered')}
+          >
+            ❓ Unanswered
           </button>
           <button
             className={currentView === 'archived' ? 'active' : ''}

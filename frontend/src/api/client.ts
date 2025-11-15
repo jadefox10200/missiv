@@ -95,6 +95,14 @@ export const getSent = async (): Promise<Miv[]> => {
   return response.json();
 };
 
+export const getUnanswered = async (): Promise<Miv[]> => {
+  const response = await fetch(`${API_BASE_URL}/mivs/unanswered`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch unanswered mivs');
+  }
+  return response.json();
+};
+
 export const getArchived = async (): Promise<Miv[]> => {
   const response = await fetch(`${API_BASE_URL}/mivs/archived`);
   if (!response.ok) {
