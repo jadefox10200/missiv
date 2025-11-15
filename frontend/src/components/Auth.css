@@ -124,3 +124,25 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.auth-form .btn-secondary {
+  background: #6c757d;
+  margin-top: 10px;
+}
+
+.auth-form .btn-secondary:hover {
+  background: #5a6268;
+}
+
+.auth-form .btn-link {
+  background: none;
+  color: #667eea;
+  padding: 10px;
+  text-decoration: none;
+  font-weight: normal;
+}
+
+.auth-form .btn-link:hover {
+  text-decoration: underline;
+  background: none;
+}

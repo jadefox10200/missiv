@@ -36,7 +36,6 @@ export interface UpdateStateRequest {
 export interface Account {
   id: string;
   username: string;
-  email: string;
   display_name: string;
   created_at: string;
   updated_at: string;
@@ -55,8 +54,10 @@ export interface Desk {
 export interface RegisterRequest {
   username: string;
   password: string;
-  email: string;
   display_name: string;
+  birthday: string;
+  first_pet_name: string;
+  mother_maiden: string;
 }
 
 export interface LoginRequest {
@@ -75,6 +76,14 @@ export interface CreateDeskRequest {
 
 export interface SwitchDeskRequest {
   desk_id: string;
+}
+
+export interface RecoverPasswordRequest {
+  username: string;
+  birthday: string;
+  first_pet_name: string;
+  mother_maiden: string;
+  new_password: string;
 }
 
 // Conversation types

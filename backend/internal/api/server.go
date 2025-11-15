@@ -50,6 +50,7 @@ func (s *Server) setupRoutes() {
 		// Account endpoints (authentication)
 		api.POST("/accounts/register", s.registerAccount)
 		api.POST("/accounts/login", s.loginAccount)
+		api.POST("/accounts/recover-password", s.recoverPassword)
 		
 		// Desk endpoints
 		api.GET("/desks", s.listDesks)

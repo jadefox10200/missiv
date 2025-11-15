@@ -28,13 +28,34 @@ func (s *Server) registerAccount(c *gin.Context) {
 		return
 	}
 
+	// Hash security question answers
+	birthdayHash, err := crypto.HashPassword(req.Birthday)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash security answers"})
+		return
+	}
+	
+	firstPetHash, err := crypto.HashPassword(req.FirstPetName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash security answers"})
+		return
+	}
+	
+	motherMaidenHash, err := crypto.HashPassword(req.MotherMaiden)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash security answers"})
+		return
+	}
+
 	// Create account
 	account := &models.Account{
-		Username:     req.Username,
-		PasswordHash: passwordHash,
-		Email:        req.Email,
-		DisplayName:  req.DisplayName,
-		Desks:        []string{},
+		Username:         req.Username,
+		PasswordHash:     passwordHash,
+		DisplayName:      req.DisplayName,
+		Desks:            []string{},
+		BirthdayHash:     birthdayHash,
+		FirstPetNameHash: firstPetHash,
+		MotherMaidenHash: motherMaidenHash,
 	}
 
 	if err := s.storage.CreateAccount(account); err != nil {
@@ -121,6 +142,57 @@ func (s *Server) loginAccount(c *gin.Context) {
 		Account: account,
 		Token:   token,
 	})
+}
+
+func (s *Server) recoverPassword(c *gin.Context) {
+	var req models.RecoverPasswordRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get account by username
+	account, err := s.storage.GetAccountByUsername(req.Username)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials or security answers"})
+		return
+	}
+
+	// Verify all security answers
+	validBirthday, err := crypto.VerifyPassword(req.Birthday, account.BirthdayHash)
+	if err != nil || !validBirthday {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials or security answers"})
+		return
+	}
+	
+	validPetName, err := crypto.VerifyPassword(req.FirstPetName, account.FirstPetNameHash)
+	if err != nil || !validPetName {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials or security answers"})
+		return
+	}
+	
+	validMaiden, err := crypto.VerifyPassword(req.MotherMaiden, account.MotherMaidenHash)
+	if err != nil || !validMaiden {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials or security answers"})
+		return
+	}
+
+	// Hash new password
+	newPasswordHash, err := crypto.HashPassword(req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash new password"})
+		return
+	}
+
+	// Update password
+	account.PasswordHash = newPasswordHash
+	if err := s.storage.UpdateAccount(account); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
 }
 
 // Desk handlers

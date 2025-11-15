@@ -7,12 +7,16 @@ type Account struct {
 	ID           string    `json:"id"`            // Unique account ID
 	Username     string    `json:"username"`      // Username for login
 	PasswordHash string    `json:"-"`             // Argon2 hashed password (not exposed in JSON)
-	Email        string    `json:"email"`         // Email address
 	DisplayName  string    `json:"display_name"`  // Display name
 	CreatedAt    time.Time `json:"created_at"`    // When the account was created
 	UpdatedAt    time.Time `json:"updated_at"`    // When the account was last updated
 	Desks        []string  `json:"desks"`         // List of desk IDs (zIDs) this account owns
 	ActiveDesk   string    `json:"active_desk"`   // Currently active desk ID
+	
+	// Security questions for password recovery (hashed answers)
+	BirthdayHash     string `json:"-"` // Hash of birthday (YYYY-MM-DD format)
+	FirstPetNameHash string `json:"-"` // Hash of first pet name
+	MotherMaidenHash string `json:"-"` // Hash of mother's maiden name
 }
 
 // Desk represents a desk/identity that belongs to an account
@@ -28,8 +32,12 @@ type Desk struct {
 type RegisterRequest struct {
 	Username    string `json:"username" binding:"required,min=3,max=32"`
 	Password    string `json:"password" binding:"required,min=8"`
-	Email       string `json:"email" binding:"required,email"`
 	DisplayName string `json:"display_name" binding:"required"`
+	
+	// Security questions for password recovery
+	Birthday       string `json:"birthday" binding:"required"`        // Format: YYYY-MM-DD
+	FirstPetName   string `json:"first_pet_name" binding:"required"`  // First pet's name
+	MotherMaiden   string `json:"mother_maiden" binding:"required"`   // Mother's maiden name
 }
 
 // LoginRequest represents a login request
@@ -52,4 +60,13 @@ type CreateDeskRequest struct {
 // SwitchDeskRequest represents a request to switch active desk
 type SwitchDeskRequest struct {
 	DeskID string `json:"desk_id" binding:"required"`
+}
+
+// RecoverPasswordRequest represents a password recovery request
+type RecoverPasswordRequest struct {
+	Username     string `json:"username" binding:"required"`
+	Birthday     string `json:"birthday" binding:"required"`
+	FirstPetName string `json:"first_pet_name" binding:"required"`
+	MotherMaiden string `json:"mother_maiden" binding:"required"`
+	NewPassword  string `json:"new_password" binding:"required,min=8"`
 }
