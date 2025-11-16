@@ -92,6 +92,37 @@
   white-space: nowrap;
 }
 
+.basket-icon {
+  font-size: 16px;
+  color: #666;
+  min-width: 30px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.basket-separator {
+  color: #999;
+  margin: 0 8px;
+}
+
+.basket-date-range {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.basket-count-inline {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.conversation-format {
+  font-size: 13px;
+}
+
 .empty-state {
   padding: 60px 20px;
   text-align: center;
