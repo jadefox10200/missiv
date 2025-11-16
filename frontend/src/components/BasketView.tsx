@@ -153,11 +153,13 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
               className={`basket-item ${selectedMivId === miv.id ? 'selected' : ''}`}
               onClick={() => onMivClick(miv)}
             >
-              {selectedBasket === 'IN' ? (
-                // Simplified INBOX view: only from, date/time, and subject
+              {selectedBasket === 'IN' || selectedBasket === 'ARCHIVED' ? (
+                // Simplified view for INBOX and ARCHIVED: only from, date/time, and subject
                 <>
                   <div className="basket-item-header">
-                    <span className="basket-from">From: {formatPhoneId(miv.from)}</span>
+                    <span className="basket-from">
+                      {miv.from === deskId ? `To: ${formatPhoneId(miv.to)}` : `From: ${formatPhoneId(miv.from)}`}
+                    </span>
                     <span className="basket-date">{formatDate(miv.created_at)}</span>
                   </div>
                   <div className="basket-subject">{miv.subject}</div>
