@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ConversationMiv, MivState } from '../types';
+import { ConversationMiv, MivState, Contact } from '../types';
 import * as api from '../api/client';
 import './BasketView.css';
 
@@ -13,11 +13,16 @@ interface BasketViewProps {
 function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: BasketViewProps) {
   const [mivs, setMivs] = useState<ConversationMiv[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contacts, setContacts] = useState<Contact[]>([]);
 
   useEffect(() => {
     const loadMivs = async () => {
       setLoading(true);
       try {
+        // Load contacts first
+        const contactsResponse = await api.listContacts(deskId);
+        setContacts(contactsResponse.contacts);
+        
         // Get all conversations and extract mivs matching the selected basket state
         const response = await api.listConversations(deskId);
         const allMivs: ConversationMiv[] = [];
@@ -39,8 +44,15 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
               // Unread received messages
               return miv.to === deskId && !miv.read_at;
             } else if (selectedBasket === 'PENDING') {
-              // Read but not replied messages
-              return miv.to === deskId && miv.read_at;
+              // Read but not replied messages - exclude if there's a reply from this desk after it
+              if (miv.to !== deskId || !miv.read_at) {
+                return false;
+              }
+              // Check if there's any miv from this desk with a higher seq_no (meaning we replied)
+              const hasReply = fullConv.mivs.some(
+                laterMiv => laterMiv.from === deskId && laterMiv.seq_no > miv.seq_no
+              );
+              return !hasReply; // Only include if not answered
             } else if (selectedBasket === 'SENT') {
               // Sent messages without replies (combines old OUT and UNANSWERED)
               return miv.from === deskId;
@@ -90,6 +102,11 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
       return `(${id.slice(0, 3)}) ${id.slice(3, 6)}-${id.slice(6)}`;
     }
     return id;
+  };
+
+  const getDisplayName = (deskIdRef: string) => {
+    const contact = contacts.find(c => c.desk_id_ref === deskIdRef);
+    return contact ? contact.name : formatPhoneId(deskIdRef);
   };
 
   const getBasketTitle = () => {
@@ -153,42 +170,16 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
               className={`basket-item ${selectedMivId === miv.id ? 'selected' : ''}`}
               onClick={() => onMivClick(miv)}
             >
-              {selectedBasket === 'IN' || selectedBasket === 'ARCHIVED' ? (
-                // Simplified view for INBOX and ARCHIVED: only from, date/time, and subject
-                <>
-                  <div className="basket-item-header">
-                    <span className="basket-from">
-                      {miv.from === deskId ? `To: ${formatPhoneId(miv.to)}` : `From: ${formatPhoneId(miv.from)}`}
-                    </span>
-                    <span className="basket-date">{formatDate(miv.created_at)}</span>
-                  </div>
-                  <div className="basket-subject">{miv.subject}</div>
-                </>
-              ) : (
-                // Full view for other baskets
-                <>
-                  <div className="basket-item-header">
-                    <span className="basket-from">
-                      {miv.from === deskId ? `To: ${formatPhoneId(miv.to)}` : `From: ${formatPhoneId(miv.from)}`}
-                    </span>
-                    <span className="basket-date">{formatDate(miv.created_at)}</span>
-                  </div>
-                  <div className="basket-subject">{miv.subject}</div>
-                  <div className="basket-preview">
-                    {atob(miv.body).substring(0, 100)}
-                    {atob(miv.body).length > 100 ? '...' : ''}
-                  </div>
-                  <div className="basket-meta">
-                    <span className="basket-seq">#{miv.seq_no} in conversation</span>
-                    {selectedBasket === 'SENT' && miv.read_at && (
-                      <span className="basket-read">✓ Read</span>
-                    )}
-                    {selectedBasket === 'SENT' && !miv.read_at && (
-                      <span className="basket-unread">○ Unread</span>
-                    )}
-                  </div>
-                </>
-              )}
+              {/* Consistent thin-line format for INBOX, PENDING, SENT: FROM, TIME/DATE, SUBJECT */}
+              <div className="basket-item-row">
+                <span className="basket-from">
+                  {miv.from === deskId ? `To: ${getDisplayName(miv.to)}` : `From: ${getDisplayName(miv.from)}`}
+                </span>
+                <span className="basket-separator">•</span>
+                <span className="basket-date">{formatDate(miv.created_at)}</span>
+                <span className="basket-separator">•</span>
+                <span className="basket-subject">{miv.subject}</span>
+              </div>
             </div>
           ))
         )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ConversationMiv, GetConversationResponse } from '../types';
+import { ConversationMiv, GetConversationResponse, Contact } from '../types';
 import * as api from '../api/client';
 import './MivDetailWithContext.css';
 
@@ -16,25 +16,30 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
   const [showReply, setShowReply] = useState(false);
   const [showAckConfirm, setShowAckConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [contacts, setContacts] = useState<Contact[]>([]);
 
   useEffect(() => {
-    const loadConversation = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
-        const response = await api.getConversation(miv.conversation_id);
-        setConversation(response);
+        const [convResponse, contactsResponse] = await Promise.all([
+          api.getConversation(miv.conversation_id),
+          api.listContacts(currentDeskId)
+        ]);
+        setConversation(convResponse);
+        setContacts(contactsResponse.contacts);
         // Find the current miv in the conversation
-        const currentMiv = response.mivs.find(m => m.id === miv.id) || miv;
+        const currentMiv = convResponse.mivs.find(m => m.id === miv.id) || miv;
         setSelectedMiv(currentMiv);
       } catch (err) {
-        console.error('Failed to load conversation:', err);
+        console.error('Failed to load data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadConversation();
-  }, [miv]);
+    loadData();
+  }, [miv, currentDeskId]);
 
   const handleMivClick = (clickedMiv: ConversationMiv) => {
     setSelectedMiv(clickedMiv);
@@ -70,6 +75,11 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
       return `(${id.slice(0, 3)}) ${id.slice(3, 6)}-${id.slice(6)}`;
     }
     return id;
+  };
+
+  const getDisplayName = (deskIdRef: string) => {
+    const contact = contacts.find(c => c.desk_id_ref === deskIdRef);
+    return contact ? contact.name : formatPhoneId(deskIdRef);
   };
 
   if (loading || !conversation) {
@@ -111,13 +121,13 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
           <div className="miv-meta-row">
             <span className="miv-label">From:</span>
             <span className="miv-value">
-              {selectedMiv.from === currentDeskId ? 'You' : formatPhoneId(selectedMiv.from)}
+              {selectedMiv.from === currentDeskId ? 'You' : getDisplayName(selectedMiv.from)}
             </span>
           </div>
           <div className="miv-meta-row">
             <span className="miv-label">To:</span>
             <span className="miv-value">
-              {selectedMiv.to === currentDeskId ? 'You' : formatPhoneId(selectedMiv.to)}
+              {selectedMiv.to === currentDeskId ? 'You' : getDisplayName(selectedMiv.to)}
             </span>
           </div>
           <div className="miv-meta-row">

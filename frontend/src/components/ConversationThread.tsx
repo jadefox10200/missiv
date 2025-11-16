@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { GetConversationResponse } from '../types';
+import React, { useState, useEffect } from 'react';
+import { GetConversationResponse, Contact } from '../types';
+import * as api from '../api/client';
 import './ConversationThread.css';
 
 interface ConversationThreadProps {
@@ -12,6 +13,20 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
   const [replyBody, setReplyBody] = useState('');
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showAckConfirm, setShowAckConfirm] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+
+  useEffect(() => {
+    const loadContactsData = async () => {
+      try {
+        const response = await api.listContacts(currentDeskId);
+        setContacts(response.contacts);
+      } catch (err) {
+        console.error('Failed to load contacts:', err);
+      }
+    };
+    
+    loadContactsData();
+  }, [currentDeskId]);
 
   const handleReply = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +58,11 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
       return `(${id.slice(0, 3)}) ${id.slice(3, 6)}-${id.slice(6)}`;
     }
     return id;
+  };
+
+  const getDisplayName = (deskIdRef: string) => {
+    const contact = contacts.find(c => c.desk_id_ref === deskIdRef);
+    return contact ? contact.name : formatDeskId(deskIdRef);
   };
 
   if (!conversation) {
@@ -78,7 +98,7 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
             >
               <div className="message-header">
                 <div className="message-from">
-                  <span className="from-label">{isFromMe ? 'You' : formatDeskId(miv.from)}</span>
+                  <span className="from-label">{isFromMe ? 'You' : getDisplayName(miv.from)}</span>
                   <span className="message-seq">#{miv.seq_no}</span>
                 </div>
                 <div className="message-time">{formatDate(miv.created_at)}</div>

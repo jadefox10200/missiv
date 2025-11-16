@@ -7,6 +7,7 @@ import BasketView from './components/BasketView';
 import MivDetailWithContext from './components/MivDetailWithContext';
 import NotificationPanel from './components/NotificationPanel';
 import ComposeMiv from './components/ComposeMiv';
+import ContactManager from './components/ContactManager';
 import {
   Account,
   Desk,
@@ -21,7 +22,7 @@ import {
 import * as api from './api/client';
 import './App.css';
 
-type View = 'baskets' | 'conversations' | 'compose' | 'notifications';
+type View = 'baskets' | 'conversations' | 'compose' | 'notifications' | 'contacts';
 
 function App() {
   // Authentication state
@@ -36,6 +37,14 @@ function App() {
   // Basket view state (primary interface)
   const [selectedBasket, setSelectedBasket] = useState<MivState>('IN');
   const [selectedMiv, setSelectedMiv] = useState<ConversationMiv | null>(null);
+  
+  // Basket counts
+  const [basketCounts, setBasketCounts] = useState<{
+    inbox: number;
+    pending: number;
+    sent: number;
+    archived: number;
+  }>({ inbox: 0, pending: 0, sent: 0, archived: 0 });
 
   // Conversation view state (supplementary)
   const [conversations, setConversations] = useState<ConversationWithLatest[]>([]);
@@ -106,6 +115,9 @@ function App() {
         setConversations(convResponse.conversations);
         setNotifications(notifResponse.notifications);
         setUnreadCount(notifResponse.unread_count);
+        
+        // Calculate basket counts
+        await calculateBasketCounts(convResponse.conversations, activeDesk.id);
       } catch (err: any) {
         console.error('Failed to load data:', err);
         // If there's an authentication error, clear the session
@@ -127,6 +139,66 @@ function App() {
       return () => clearInterval(interval);
     }
   }, [activeDesk]);
+  
+  const calculateBasketCounts = async (convs: ConversationWithLatest[], deskId: string) => {
+    let inboxCount = 0;
+    let pendingCount = 0;
+    let sentCount = 0;
+    let archivedCount = 0;
+    
+    // Handle case where convs might be null or undefined
+    if (!convs || !Array.isArray(convs)) {
+      setBasketCounts({
+        inbox: 0,
+        pending: 0,
+        sent: 0,
+        archived: 0
+      });
+      return;
+    }
+    
+    for (const conv of convs) {
+      try {
+        const fullConv = await api.getConversation(conv.conversation.id);
+        
+        for (const miv of fullConv.mivs) {
+          // Inbox: unread received messages
+          if (miv.to === deskId && !miv.read_at && !conv.conversation.is_archived) {
+            inboxCount++;
+          }
+          
+          // Pending: read but not replied messages (exclude answered)
+          if (miv.to === deskId && miv.read_at && !conv.conversation.is_archived) {
+            const hasReply = fullConv.mivs.some(
+              laterMiv => laterMiv.from === deskId && laterMiv.seq_no > miv.seq_no
+            );
+            if (!hasReply) {
+              pendingCount++;
+            }
+          }
+          
+          // Sent: messages from this desk
+          if (miv.from === deskId && !conv.conversation.is_archived) {
+            sentCount++;
+          }
+          
+          // Archived: all messages in archived conversations
+          if (conv.conversation.is_archived) {
+            archivedCount++;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load conversation for counting:', err);
+      }
+    }
+    
+    setBasketCounts({
+      inbox: inboxCount,
+      pending: pendingCount,
+      sent: sentCount,
+      archived: archivedCount
+    });
+  };
 
   const refreshConversations = async () => {
     if (!activeDesk) return;
@@ -365,6 +437,7 @@ function App() {
               }}
             >
               📥 Inbox
+              {basketCounts.inbox > 0 && <span className="badge">{basketCounts.inbox}</span>}
             </button>
             <button
               className={currentView === 'baskets' && selectedBasket === 'PENDING' ? 'active' : ''}
@@ -375,6 +448,7 @@ function App() {
               }}
             >
               ⏳ Pending
+              {basketCounts.pending > 0 && <span className="badge">{basketCounts.pending}</span>}
             </button>
             <button
               className={currentView === 'baskets' && selectedBasket === 'SENT' ? 'active' : ''}
@@ -385,16 +459,7 @@ function App() {
               }}
             >
               📤 Sent
-            </button>
-            <button
-              className={currentView === 'baskets' && selectedBasket === 'ARCHIVED' ? 'active' : ''}
-              onClick={() => {
-                setCurrentView('baskets');
-                setSelectedBasket('ARCHIVED');
-                setSelectedMiv(null);
-              }}
-            >
-              📁 Archived
+              {basketCounts.sent > 0 && <span className="badge">{basketCounts.sent}</span>}
             </button>
           </div>
 
@@ -405,6 +470,23 @@ function App() {
               onClick={() => setCurrentView('conversations')}
             >
               💬 Conversations
+            </button>
+            <button
+              className={currentView === 'baskets' && selectedBasket === 'ARCHIVED' ? 'active' : ''}
+              onClick={() => {
+                setCurrentView('baskets');
+                setSelectedBasket('ARCHIVED');
+                setSelectedMiv(null);
+              }}
+            >
+              📁 Archived
+              {basketCounts.archived > 0 && <span className="badge">{basketCounts.archived}</span>}
+            </button>
+            <button
+              className={currentView === 'contacts' ? 'active' : ''}
+              onClick={() => setCurrentView('contacts')}
+            >
+              👥 Contacts
             </button>
             <button
               className={currentView === 'notifications' ? 'active' : ''}
@@ -428,6 +510,7 @@ function App() {
           <ComposeMiv
             onSend={handleSendConversation}
             onCancel={() => setCurrentView('baskets')}
+            deskId={activeDesk.id}
           />
         ) : currentView === 'notifications' ? (
           <div className="notifications-view">
@@ -437,6 +520,8 @@ function App() {
               onMarkAsRead={handleMarkNotificationAsRead}
             />
           </div>
+        ) : currentView === 'contacts' ? (
+          <ContactManager deskId={activeDesk.id} />
         ) : currentView === 'baskets' ? (
           <>
             <div className="basket-list-container">
@@ -468,6 +553,7 @@ function App() {
                 conversations={conversations}
                 selectedConversationId={selectedConversation?.conversation.id}
                 onConversationClick={handleConversationClick}
+                currentDeskId={activeDesk.id}
               />
             </div>
             <div className="conversation-thread-container">

@@ -70,6 +70,13 @@ func (s *Server) setupRoutes() {
 		api.GET("/notifications", s.listNotifications)
 		api.POST("/notifications/:id/read", s.markNotificationAsRead)
 		
+		// Contact endpoints
+		api.GET("/desks/:desk_id/contacts", s.listContacts)
+		api.POST("/desks/:desk_id/contacts", s.createContact)
+		api.GET("/contacts/:contact_id", s.getContact)
+		api.PUT("/contacts/:contact_id", s.updateContact)
+		api.DELETE("/contacts/:contact_id", s.deleteContact)
+		
 		// Legacy Identity endpoints (for backward compatibility)
 		api.GET("/identity", s.getIdentity)
 		api.POST("/identity", s.createIdentity)

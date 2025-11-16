@@ -15,6 +15,10 @@ import {
   CreateConversationRequest,
   ReplyToConversationRequest,
   ListNotificationsResponse,
+  Contact,
+  CreateContactRequest,
+  UpdateContactRequest,
+  ListContactsResponse,
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
@@ -286,5 +290,68 @@ export const markNotificationAsRead = async (notificationId: string): Promise<vo
   });
   if (!response.ok) {
     throw new Error('Failed to mark notification as read');
+  }
+};
+
+// Contact API
+
+export const listContacts = async (deskId: string): Promise<ListContactsResponse> => {
+  const response = await fetch(`${API_BASE_URL}/desks/${deskId}/contacts`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch contacts');
+  }
+  return response.json();
+};
+
+export const createContact = async (
+  deskId: string,
+  request: CreateContactRequest
+): Promise<Contact> => {
+  const response = await fetch(`${API_BASE_URL}/desks/${deskId}/contacts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create contact');
+  }
+  return response.json();
+};
+
+export const getContact = async (contactId: string): Promise<Contact> => {
+  const response = await fetch(`${API_BASE_URL}/contacts/${contactId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch contact');
+  }
+  return response.json();
+};
+
+export const updateContact = async (
+  contactId: string,
+  request: UpdateContactRequest
+): Promise<Contact> => {
+  const response = await fetch(`${API_BASE_URL}/contacts/${contactId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update contact');
+  }
+  return response.json();
+};
+
+export const deleteContact = async (contactId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/contacts/${contactId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete contact');
   }
 };

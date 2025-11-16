@@ -161,3 +161,32 @@ export interface ListNotificationsResponse {
   unread_count: number;
   total: number;
 }
+
+// Contact types
+
+export interface Contact {
+  id: string;
+  desk_id: string;
+  name: string;
+  desk_id_ref: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateContactRequest {
+  name: string;
+  desk_id_ref: string;
+  notes?: string;
+}
+
+export interface UpdateContactRequest {
+  name?: string;
+  desk_id_ref?: string;
+  notes?: string;
+}
+
+export interface ListContactsResponse {
+  contacts: Contact[];
+  total: number;
+}
