@@ -153,6 +153,7 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
             )}
           </div>
           <span className="help-text">
+            {to && contactSearchTerm && `mivID: ${formatPhoneId(to)}`}
             {to && !contactSearchTerm && `Sending to: ${formatPhoneId(to)}`}
             {!to && 'Search for a contact or enter a 10-digit ID'}
           </span>

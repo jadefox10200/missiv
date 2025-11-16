@@ -301,10 +301,15 @@ function App() {
         is_ack: isAck 
       });
       
-      // Reload the miv to show the updated conversation
-      const response = await api.getConversation(selectedMiv.conversation_id, activeDesk.id);
-      const updatedMiv = response.mivs.find(m => m.id === selectedMiv.id) || selectedMiv;
-      setSelectedMiv(updatedMiv);
+      // Clear the selected miv immediately to remove it from view
+      setSelectedMiv(null);
+      
+      // Refresh conversations to update basket counts and lists
+      await refreshConversations();
+      
+      // Recalculate basket counts
+      const response = await api.listConversations(activeDesk.id);
+      await calculateBasketCounts(response.conversations, activeDesk.id);
     } catch (err) {
       console.error('Failed to reply:', err);
     }
@@ -480,7 +485,6 @@ function App() {
               }}
             >
               📁 Archived
-              {basketCounts.archived > 0 && <span className="badge">{basketCounts.archived}</span>}
             </button>
             <button
               className={currentView === 'contacts' ? 'active' : ''}
@@ -550,7 +554,7 @@ function App() {
           <>
             <div className="conversation-list-container">
               <ConversationList
-                conversations={conversations}
+                conversations={conversations.filter(conv => !conv.conversation.is_archived)}
                 selectedConversationId={selectedConversation?.conversation.id}
                 onConversationClick={handleConversationClick}
                 currentDeskId={activeDesk.id}
