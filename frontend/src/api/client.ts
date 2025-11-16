@@ -208,8 +208,11 @@ export const listConversations = async (deskId: string): Promise<ListConversatio
   return response.json();
 };
 
-export const getConversation = async (id: string): Promise<GetConversationResponse> => {
-  const response = await fetch(`${API_BASE_URL}/conversations/${id}`);
+export const getConversation = async (id: string, deskId?: string): Promise<GetConversationResponse> => {
+  const url = deskId 
+    ? `${API_BASE_URL}/conversations/${id}?desk_id=${deskId}`
+    : `${API_BASE_URL}/conversations/${id}`;
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to fetch conversation');
   }
@@ -247,6 +250,19 @@ export const replyToConversation = async (
   });
   if (!response.ok) {
     throw new Error('Failed to reply to conversation');
+  }
+};
+
+// Mark miv as read
+export const markMivAsRead = async (mivId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/mivs/${mivId}/read`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to mark miv as read');
   }
 };
 

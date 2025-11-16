@@ -411,6 +411,63 @@ func (s *MemoryStorage) UpdateConversationMiv(miv *models.ConversationMiv) error
 	return fmt.Errorf("miv not found: %s", miv.ID)
 }
 
+// MarkConversationMivAsRead marks a specific miv as read
+func (s *MemoryStorage) MarkConversationMivAsRead(mivID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	// Find the miv across all conversations
+	for _, mivs := range s.conversationMivs {
+		for i, miv := range mivs {
+			if miv.ID == mivID && miv.ReadAt == nil {
+				now := time.Now()
+				mivs[i].ReadAt = &now
+				return nil
+			}
+		}
+	}
+	
+	return fmt.Errorf("miv not found or already read: %s", mivID)
+}
+
+// MarkConversationMivsAsRead marks all incoming unread mivs in a conversation as read for a specific desk
+func (s *MemoryStorage) MarkConversationMivsAsRead(conversationID string, deskID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	mivs, exists := s.conversationMivs[conversationID]
+	if !exists {
+		return fmt.Errorf("conversation not found: %s", conversationID)
+	}
+	
+	now := time.Now()
+	for i, miv := range mivs {
+		// Mark as read only if it's addressed to this desk and not already read
+		if miv.To == deskID && miv.ReadAt == nil {
+			mivs[i].ReadAt = &now
+		}
+	}
+	
+	return nil
+}
+
+// GetConversationMiv retrieves a specific miv by ID
+func (s *MemoryStorage) GetConversationMiv(mivID string) (*models.ConversationMiv, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	
+	// Find the miv across all conversations
+	for _, mivs := range s.conversationMivs {
+		for _, miv := range mivs {
+			if miv.ID == mivID {
+				return miv, nil
+			}
+		}
+	}
+	
+	return nil, fmt.Errorf("miv not found: %s", mivID)
+}
+
 // Notification methods
 
 // CreateNotification creates a new notification

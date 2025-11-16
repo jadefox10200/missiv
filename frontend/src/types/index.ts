@@ -95,6 +95,7 @@ export interface Conversation {
   created_at: string;
   updated_at: string;
   miv_count: number;
+  is_archived: boolean;
 }
 
 export interface ConversationMiv {
@@ -111,6 +112,7 @@ export interface ConversationMiv {
   received_at?: string;
   read_at?: string;
   is_encrypted: boolean;
+  is_ack: boolean;
 }
 
 export interface CreateConversationRequest {
@@ -121,6 +123,7 @@ export interface CreateConversationRequest {
 
 export interface ReplyToConversationRequest {
   body: string;
+  is_ack?: boolean;
 }
 
 export interface ConversationWithLatest {

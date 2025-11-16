@@ -5,20 +5,26 @@ import './ConversationThread.css';
 interface ConversationThreadProps {
   conversation: GetConversationResponse;
   currentDeskId: string;
-  onReply: (body: string) => void;
+  onReply: (body: string, isAck?: boolean) => void;
 }
 
 function ConversationThread({ conversation, currentDeskId, onReply }: ConversationThreadProps) {
   const [replyBody, setReplyBody] = useState('');
   const [showReplyForm, setShowReplyForm] = useState(false);
+  const [showAckConfirm, setShowAckConfirm] = useState(false);
 
   const handleReply = (e: React.FormEvent) => {
     e.preventDefault();
     if (replyBody.trim()) {
-      onReply(replyBody.trim());
+      onReply(replyBody.trim(), false);
       setReplyBody('');
       setShowReplyForm(false);
     }
+  };
+
+  const handleAck = () => {
+    onReply('ACK - Conversation ended', true);
+    setShowAckConfirm(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -55,6 +61,9 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
         <h2>{conversation.conversation.subject}</h2>
         <div className="thread-meta">
           {conversation.mivs.length} {conversation.mivs.length === 1 ? 'message' : 'messages'}
+          {conversation.conversation.is_archived && (
+            <span className="archived-badge"> • Archived</span>
+          )}
         </div>
       </div>
 
@@ -76,7 +85,11 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
               </div>
               
               <div className="message-body">
-                {atob(miv.body)}
+                {miv.is_ack ? (
+                  <em>ACK - Conversation ended</em>
+                ) : (
+                  atob(miv.body)
+                )}
               </div>
 
               {miv.read_at && (
@@ -96,7 +109,22 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
       </div>
 
       <div className="conversation-reply">
-        {showReplyForm ? (
+        {showAckConfirm ? (
+          <div className="ack-confirm">
+            <p>Are you sure you want to end this conversation with an ACK?</p>
+            <div className="ack-actions">
+              <button onClick={handleAck} className="btn btn-danger">
+                Yes, Send ACK
+              </button>
+              <button
+                onClick={() => setShowAckConfirm(false)}
+                className="btn"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : showReplyForm ? (
           <form onSubmit={handleReply} className="reply-form">
             <textarea
               value={replyBody}
@@ -111,6 +139,16 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
               </button>
               <button
                 type="button"
+                className="btn btn-danger"
+                onClick={() => {
+                  setShowReplyForm(false);
+                  setShowAckConfirm(true);
+                }}
+              >
+                Send ACK
+              </button>
+              <button
+                type="button"
                 className="btn"
                 onClick={() => {
                   setShowReplyForm(false);
@@ -122,12 +160,20 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
             </div>
           </form>
         ) : (
-          <button
-            className="btn btn-reply"
-            onClick={() => setShowReplyForm(true)}
-          >
-            Reply to conversation
-          </button>
+          <div className="reply-buttons">
+            <button
+              className="btn btn-reply"
+              onClick={() => setShowReplyForm(true)}
+            >
+              Reply to conversation
+            </button>
+            <button
+              className="btn btn-ack"
+              onClick={() => setShowAckConfirm(true)}
+            >
+              Send ACK (End Conversation)
+            </button>
+          </div>
         )}
       </div>
     </div>

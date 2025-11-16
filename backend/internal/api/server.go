@@ -63,6 +63,9 @@ func (s *Server) setupRoutes() {
 		api.POST("/conversations", s.createConversation)
 		api.POST("/conversations/:id/reply", s.replyToConversation)
 		
+		// Miv read endpoints
+		api.POST("/mivs/:id/read", s.markMivAsRead)
+		
 		// Notification endpoints
 		api.GET("/notifications", s.listNotifications)
 		api.POST("/notifications/:id/read", s.markNotificationAsRead)
