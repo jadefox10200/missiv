@@ -1,4 +1,4 @@
-export type MivState = 'IN' | 'PENDING' | 'OUT' | 'UNANSWERED' | 'ARCHIVED';
+export type MivState = 'IN' | 'PENDING' | 'SENT' | 'OUT' | 'UNANSWERED' | 'ARCHIVED';
 
 export type NotificationType = 'READ_RECEIPT' | 'NEW_MIV' | 'REPLY';
 

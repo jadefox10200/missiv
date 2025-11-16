@@ -112,6 +112,11 @@
   font-weight: 500;
 }
 
+.basket-unread {
+  color: #ff9800;
+  font-weight: 500;
+}
+
 .empty-state {
   padding: 60px 20px;
   text-align: center;

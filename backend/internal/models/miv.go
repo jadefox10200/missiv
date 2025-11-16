@@ -8,8 +8,9 @@ type MivState string
 const (
 	StateIN         MivState = "IN"         // Received mivs in your inbox
 	StatePENDING    MivState = "PENDING"    // Mivs I have looked at but not answered (automatically moved after opening to read)
-	StateOUT        MivState = "OUT"        // Sent mivs, no read receipt yet
-	StateUNANSWERED MivState = "UNANSWERED" // Mivs that have been read by recipient but not answered (read receipt received)
+	StateSENT       MivState = "SENT"       // Sent mivs that haven't received replies yet (combines old OUT and UNANSWERED)
+	StateOUT        MivState = "OUT"        // DEPRECATED: Use SENT instead
+	StateUNANSWERED MivState = "UNANSWERED" // DEPRECATED: Use SENT instead
 	StateARCHIVED   MivState = "ARCHIVED"   // Conversations that have ended but can still be reviewed
 )
 

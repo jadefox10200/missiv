@@ -168,7 +168,7 @@ body {
 }
 
 .conversation-list-container {
-  width: 400px;
+  width: 350px;
   border-right: 1px solid #dee2e6;
   background: white;
   overflow: hidden;
@@ -182,7 +182,7 @@ body {
 
 /* Basket view containers */
 .basket-list-container {
-  width: 400px;
+  width: 350px;
   border-right: 1px solid #dee2e6;
   background: white;
   overflow: hidden;
