@@ -17,6 +17,9 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
   const [showAckConfirm, setShowAckConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactDeskId, setNewContactDeskId] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -49,14 +52,94 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
     e.preventDefault();
     if (!replyBody.trim()) return;
 
-    await onReply(replyBody, false);
+    // Optimistically add the reply to local state
+    const optimisticMiv: ConversationMiv = {
+      id: `temp-${Date.now()}`,
+      conversation_id: selectedMiv.conversation_id,
+      seq_no: conversation ? conversation.mivs.length + 1 : 1,
+      from: currentDeskId,
+      to: selectedMiv.from === currentDeskId ? selectedMiv.to : selectedMiv.from,
+      subject: selectedMiv.subject,
+      body: btoa(replyBody),
+      state: 'SENT' as any,
+      created_at: new Date().toISOString(),
+      is_encrypted: false,
+      is_ack: false
+    };
+
+    // Update conversation immediately
+    if (conversation) {
+      setConversation({
+        ...conversation,
+        mivs: [...conversation.mivs, optimisticMiv]
+      });
+    }
+
     setReplyBody('');
     setShowReply(false);
+
+    // Then sync with server in background
+    try {
+      await onReply(replyBody, false);
+      // Reload conversation to get the real data from server
+      const updatedConv = await api.getConversation(selectedMiv.conversation_id);
+      setConversation(updatedConv);
+    } catch (err) {
+      console.error('Failed to send reply:', err);
+      // Revert optimistic update on error
+      if (conversation) {
+        setConversation({
+          ...conversation,
+          mivs: conversation.mivs.filter(m => m.id !== optimisticMiv.id)
+        });
+      }
+      alert('Failed to send reply. Please try again.');
+    }
   };
 
   const handleAck = async () => {
-    await onReply('ACK - Conversation ended', true);
+    // Optimistically add ACK to local state
+    const optimisticAck: ConversationMiv = {
+      id: `temp-ack-${Date.now()}`,
+      conversation_id: selectedMiv.conversation_id,
+      seq_no: conversation ? conversation.mivs.length + 1 : 1,
+      from: currentDeskId,
+      to: selectedMiv.from === currentDeskId ? selectedMiv.to : selectedMiv.from,
+      subject: selectedMiv.subject,
+      body: btoa('ACK - Conversation ended'),
+      state: 'SENT' as any,
+      created_at: new Date().toISOString(),
+      is_encrypted: false,
+      is_ack: true
+    };
+
+    // Update conversation immediately
+    if (conversation) {
+      setConversation({
+        ...conversation,
+        mivs: [...conversation.mivs, optimisticAck]
+      });
+    }
+
     setShowAckConfirm(false);
+
+    // Then sync with server in background
+    try {
+      await onReply('ACK - Conversation ended', true);
+      // Reload conversation to get the real data from server
+      const updatedConv = await api.getConversation(selectedMiv.conversation_id);
+      setConversation(updatedConv);
+    } catch (err) {
+      console.error('Failed to send ACK:', err);
+      // Revert optimistic update on error
+      if (conversation) {
+        setConversation({
+          ...conversation,
+          mivs: conversation.mivs.filter(m => m.id !== optimisticAck.id)
+        });
+      }
+      alert('Failed to send ACK. Please try again.');
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -72,7 +155,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
 
   const formatPhoneId = (id: string) => {
     if (id.length === 10) {
-      return `(${id.slice(0, 3)}) ${id.slice(3, 6)}-${id.slice(6)}`;
+      return `${id.slice(0, 4)}-${id.slice(4, 6)}-${id.slice(6)}`;
     }
     return id;
   };
@@ -80,6 +163,41 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
   const getDisplayName = (deskIdRef: string) => {
     const contact = contacts.find(c => c.desk_id_ref === deskIdRef);
     return contact ? contact.name : formatPhoneId(deskIdRef);
+  };
+
+  const isContact = (deskIdRef: string) => {
+    return contacts.some(c => c.desk_id_ref === deskIdRef);
+  };
+
+  const handleAddContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newContactName.trim() || !newContactDeskId) return;
+
+    try {
+      await api.createContact(currentDeskId, {
+        name: newContactName.trim(),
+        desk_id_ref: newContactDeskId,
+        notes: ''
+      });
+      
+      // Reload contacts
+      const contactsResponse = await api.listContacts(currentDeskId);
+      setContacts(contactsResponse.contacts);
+      
+      // Close modal
+      setShowAddContactModal(false);
+      setNewContactName('');
+      setNewContactDeskId('');
+    } catch (err) {
+      console.error('Failed to add contact:', err);
+      alert('Failed to add contact. Please try again.');
+    }
+  };
+
+  const openAddContactModal = (deskIdRef: string) => {
+    setNewContactDeskId(deskIdRef);
+    setNewContactName('');
+    setShowAddContactModal(true);
   };
 
   if (loading || !conversation) {
@@ -123,12 +241,30 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
             <span className="miv-value">
               {selectedMiv.from === currentDeskId ? 'You' : getDisplayName(selectedMiv.from)}
             </span>
+            {selectedMiv.from !== currentDeskId && !isContact(selectedMiv.from) && (
+              <button 
+                className="btn-add-contact-inline" 
+                onClick={() => openAddContactModal(selectedMiv.from)}
+                title="Add as contact"
+              >
+                + Add Contact
+              </button>
+            )}
           </div>
           <div className="miv-meta-row">
             <span className="miv-label">To:</span>
             <span className="miv-value">
               {selectedMiv.to === currentDeskId ? 'You' : getDisplayName(selectedMiv.to)}
             </span>
+            {selectedMiv.to !== currentDeskId && !isContact(selectedMiv.to) && (
+              <button 
+                className="btn-add-contact-inline" 
+                onClick={() => openAddContactModal(selectedMiv.to)}
+                title="Add as contact"
+              >
+                + Add Contact
+              </button>
+            )}
           </div>
           <div className="miv-meta-row">
             <span className="miv-label">Date:</span>
@@ -228,6 +364,46 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
           </form>
         )}
       </div>
+
+      {/* Add Contact Modal */}
+      {showAddContactModal && (
+        <div className="add-contact-modal-overlay" onClick={() => setShowAddContactModal(false)}>
+          <div className="add-contact-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Add New Contact</h3>
+            <form onSubmit={handleAddContact}>
+              <div className="modal-form-group">
+                <label htmlFor="contactName">Name</label>
+                <input
+                  id="contactName"
+                  type="text"
+                  value={newContactName}
+                  onChange={(e) => setNewContactName(e.target.value)}
+                  placeholder="Enter contact name"
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="modal-form-group">
+                <label htmlFor="contactDeskId">Desk ID</label>
+                <input
+                  id="contactDeskId"
+                  type="text"
+                  value={formatPhoneId(newContactDeskId)}
+                  disabled
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" onClick={() => setShowAddContactModal(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Add Contact
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

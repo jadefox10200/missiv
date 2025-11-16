@@ -437,7 +437,7 @@ function App() {
               }}
             >
               📥 Inbox
-              {basketCounts.inbox > 0 && <span className="badge">{basketCounts.inbox}</span>}
+              <span className="count-badge">{basketCounts.inbox}</span>
             </button>
             <button
               className={currentView === 'baskets' && selectedBasket === 'PENDING' ? 'active' : ''}
@@ -448,7 +448,7 @@ function App() {
               }}
             >
               ⏳ Pending
-              {basketCounts.pending > 0 && <span className="badge">{basketCounts.pending}</span>}
+              <span className="count-badge">{basketCounts.pending}</span>
             </button>
             <button
               className={currentView === 'baskets' && selectedBasket === 'SENT' ? 'active' : ''}
@@ -459,7 +459,7 @@ function App() {
               }}
             >
               📤 Sent
-              {basketCounts.sent > 0 && <span className="badge">{basketCounts.sent}</span>}
+              <span className="count-badge">{basketCounts.sent}</span>
             </button>
           </div>
 

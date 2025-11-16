@@ -99,7 +99,7 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
 
   const formatPhoneId = (id: string) => {
     if (id.length === 10) {
-      return `(${id.slice(0, 3)}) ${id.slice(3, 6)}-${id.slice(6)}`;
+      return `${id.slice(0, 4)}-${id.slice(4, 6)}-${id.slice(6)}`;
     }
     return id;
   };
@@ -170,14 +170,12 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
               className={`basket-item ${selectedMivId === miv.id ? 'selected' : ''}`}
               onClick={() => onMivClick(miv)}
             >
-              {/* Consistent thin-line format for INBOX, PENDING, SENT: FROM, TIME/DATE, SUBJECT */}
+              {/* Format: FROM, DATE, SUBJECT with more space for subject */}
               <div className="basket-item-row">
                 <span className="basket-from">
                   {miv.from === deskId ? `To: ${getDisplayName(miv.to)}` : `From: ${getDisplayName(miv.from)}`}
                 </span>
-                <span className="basket-separator">•</span>
                 <span className="basket-date">{formatDate(miv.created_at)}</span>
-                <span className="basket-separator">•</span>
                 <span className="basket-subject">{miv.subject}</span>
               </div>
             </div>

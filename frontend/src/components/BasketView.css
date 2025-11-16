@@ -66,27 +66,21 @@
 .basket-item-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   font-size: 14px;
 }
 
 .basket-from {
   font-weight: 600;
   color: #333;
-  min-width: 140px;
-  flex-shrink: 0;
-}
-
-.basket-separator {
-  color: #ccc;
-  font-weight: 300;
+  min-width: 180px;
   flex-shrink: 0;
 }
 
 .basket-date {
   font-size: 13px;
   color: #666;
-  min-width: 80px;
+  min-width: 100px;
   flex-shrink: 0;
 }
 
