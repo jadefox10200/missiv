@@ -23,7 +23,7 @@ function ContactManager({ deskId }: ContactManagerProps) {
       setLoading(true);
       try {
         const response = await api.listContacts(deskId);
-        setContacts(response.contacts);
+        setContacts(response.contacts || []);
       } catch (err) {
         console.error('Failed to load contacts:', err);
       } finally {
@@ -38,7 +38,7 @@ function ContactManager({ deskId }: ContactManagerProps) {
     setLoading(true);
     try {
       const response = await api.listContacts(deskId);
-      setContacts(response.contacts);
+      setContacts(response.contacts || []);
     } catch (err) {
       console.error('Failed to load contacts:', err);
     } finally {

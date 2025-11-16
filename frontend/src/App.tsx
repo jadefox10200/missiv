@@ -112,8 +112,8 @@ function App() {
           api.listConversations(activeDesk.id),
           api.listNotifications(activeDesk.id, false)
         ]);
-        setConversations(convResponse.conversations);
-        setNotifications(notifResponse.notifications);
+        setConversations(convResponse.conversations || []);
+        setNotifications(notifResponse.notifications || []);
         setUnreadCount(notifResponse.unread_count);
         
         // Calculate basket counts
@@ -204,7 +204,7 @@ function App() {
     if (!activeDesk) return;
     try {
       const response = await api.listConversations(activeDesk.id);
-      setConversations(response.conversations);
+      setConversations(response.conversations || []);
     } catch (err) {
       console.error('Failed to refresh conversations:', err);
     }
@@ -214,7 +214,7 @@ function App() {
     if (!activeDesk) return;
     try {
       const response = await api.listNotifications(activeDesk.id, false);
-      setNotifications(response.notifications);
+      setNotifications(response.notifications || []);
       setUnreadCount(response.unread_count);
     } catch (err) {
       console.error('Failed to refresh notifications:', err);

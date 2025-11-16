@@ -23,7 +23,7 @@ function ConversationList({
       if (!currentDeskId) return;
       try {
         const response = await api.listContacts(currentDeskId);
-        setContacts(response.contacts);
+        setContacts(response.contacts || []);
       } catch (err) {
         console.error('Failed to load contacts:', err);
       }

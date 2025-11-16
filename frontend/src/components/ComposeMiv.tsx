@@ -23,7 +23,7 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
     const loadContacts = async () => {
       try {
         const response = await api.listContacts(deskId);
-        setContacts(response.contacts);
+        setContacts(response.contacts || []);
       } catch (err) {
         console.error('Failed to load contacts:', err);
       }
