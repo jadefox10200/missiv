@@ -3,21 +3,25 @@ import Auth from './components/Auth';
 import DeskSwitcher from './components/DeskSwitcher';
 import ConversationList from './components/ConversationList';
 import ConversationThread from './components/ConversationThread';
+import BasketView from './components/BasketView';
+import MivDetailWithContext from './components/MivDetailWithContext';
 import NotificationPanel from './components/NotificationPanel';
 import ComposeMiv from './components/ComposeMiv';
 import {
   Account,
   Desk,
   ConversationWithLatest,
+  ConversationMiv,
   GetConversationResponse,
   Notification,
   RegisterRequest,
   CreateMivRequest,
+  MivState,
 } from './types';
 import * as api from './api/client';
 import './App.css';
 
-type View = 'conversations' | 'compose' | 'notifications';
+type View = 'baskets' | 'conversations' | 'compose' | 'notifications';
 
 function App() {
   // Authentication state
@@ -29,10 +33,14 @@ function App() {
   const [desks, setDesks] = useState<Desk[]>([]);
   const [activeDesk, setActiveDesk] = useState<Desk | null>(null);
 
-  // Conversation state
+  // Basket view state (primary interface)
+  const [selectedBasket, setSelectedBasket] = useState<MivState>('IN');
+  const [selectedMiv, setSelectedMiv] = useState<ConversationMiv | null>(null);
+
+  // Conversation view state (supplementary)
   const [conversations, setConversations] = useState<ConversationWithLatest[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<GetConversationResponse | null>(null);
-  const [currentView, setCurrentView] = useState<View>('conversations');
+  const [currentView, setCurrentView] = useState<View>('baskets');
 
   // Notification state
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -187,6 +195,29 @@ function App() {
     }
   };
 
+  const handleMivClick = async (miv: ConversationMiv) => {
+    setSelectedMiv(miv);
+    // When clicking a miv in a basket, automatically mark it as read if it's incoming
+    if (miv.to === activeDesk?.id && !miv.read_at) {
+      // In a real implementation, mark as read
+    }
+  };
+
+  const handleMivReply = async (body: string) => {
+    if (!activeDesk || !selectedMiv) return;
+
+    try {
+      await api.replyToConversation(selectedMiv.conversation_id, activeDesk.id, { body });
+      
+      // Reload the miv to show the updated conversation
+      const response = await api.getConversation(selectedMiv.conversation_id);
+      const updatedMiv = response.mivs.find(m => m.id === selectedMiv.id) || selectedMiv;
+      setSelectedMiv(updatedMiv);
+    } catch (err) {
+      console.error('Failed to reply:', err);
+    }
+  };
+
   const handleConversationClick = async (conv: ConversationWithLatest) => {
     try {
       const response = await api.getConversation(conv.conversation.id);
@@ -303,19 +334,76 @@ function App() {
         </button>
 
         <nav className="nav-menu">
-          <button
-            className={currentView === 'conversations' ? 'active' : ''}
-            onClick={() => setCurrentView('conversations')}
-          >
-            💬 Conversations
-          </button>
-          <button
-            className={currentView === 'notifications' ? 'active' : ''}
-            onClick={() => setCurrentView('notifications')}
-          >
-            🔔 Notifications
-            {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
-          </button>
+          <div className="nav-section">
+            <h4>Baskets</h4>
+            <button
+              className={currentView === 'baskets' && selectedBasket === 'IN' ? 'active' : ''}
+              onClick={() => {
+                setCurrentView('baskets');
+                setSelectedBasket('IN');
+                setSelectedMiv(null);
+              }}
+            >
+              📥 Inbox
+            </button>
+            <button
+              className={currentView === 'baskets' && selectedBasket === 'PENDING' ? 'active' : ''}
+              onClick={() => {
+                setCurrentView('baskets');
+                setSelectedBasket('PENDING');
+                setSelectedMiv(null);
+              }}
+            >
+              ⏳ Pending
+            </button>
+            <button
+              className={currentView === 'baskets' && selectedBasket === 'OUT' ? 'active' : ''}
+              onClick={() => {
+                setCurrentView('baskets');
+                setSelectedBasket('OUT');
+                setSelectedMiv(null);
+              }}
+            >
+              📤 Out
+            </button>
+            <button
+              className={currentView === 'baskets' && selectedBasket === 'UNANSWERED' ? 'active' : ''}
+              onClick={() => {
+                setCurrentView('baskets');
+                setSelectedBasket('UNANSWERED');
+                setSelectedMiv(null);
+              }}
+            >
+              ❓ Unanswered
+            </button>
+            <button
+              className={currentView === 'baskets' && selectedBasket === 'ARCHIVED' ? 'active' : ''}
+              onClick={() => {
+                setCurrentView('baskets');
+                setSelectedBasket('ARCHIVED');
+                setSelectedMiv(null);
+              }}
+            >
+              📁 Archived
+            </button>
+          </div>
+
+          <div className="nav-section">
+            <h4>Other</h4>
+            <button
+              className={currentView === 'conversations' ? 'active' : ''}
+              onClick={() => setCurrentView('conversations')}
+            >
+              💬 Conversations
+            </button>
+            <button
+              className={currentView === 'notifications' ? 'active' : ''}
+              onClick={() => setCurrentView('notifications')}
+            >
+              🔔 Notifications
+              {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
+            </button>
+          </div>
         </nav>
 
         <div className="sidebar-footer">
@@ -329,7 +417,7 @@ function App() {
         {currentView === 'compose' ? (
           <ComposeMiv
             onSend={handleSendConversation}
-            onCancel={() => setCurrentView('conversations')}
+            onCancel={() => setCurrentView('baskets')}
           />
         ) : currentView === 'notifications' ? (
           <div className="notifications-view">
@@ -339,6 +427,30 @@ function App() {
               onMarkAsRead={handleMarkNotificationAsRead}
             />
           </div>
+        ) : currentView === 'baskets' ? (
+          <>
+            <div className="basket-list-container">
+              <BasketView
+                deskId={activeDesk.id}
+                selectedBasket={selectedBasket}
+                onMivClick={handleMivClick}
+                selectedMivId={selectedMiv?.id}
+              />
+            </div>
+            <div className="basket-detail-container">
+              {selectedMiv ? (
+                <MivDetailWithContext
+                  miv={selectedMiv}
+                  currentDeskId={activeDesk.id}
+                  onReply={handleMivReply}
+                />
+              ) : (
+                <div className="empty-selection">
+                  <p>Select a message to view</p>
+                </div>
+              )}
+            </div>
+          </>
         ) : (
           <>
             <div className="conversation-list-container">
