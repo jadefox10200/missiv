@@ -25,11 +25,14 @@ type MemoryStorage struct {
 	conversationMivs map[string][]*models.ConversationMiv // conversationID -> []Miv
 	notifications    map[string]*models.Notification   // notificationID -> Notification
 	notificationsByDesk map[string][]*models.Notification // deskID -> []Notification
+	contacts         map[string]*models.Contact        // contactID -> Contact
+	contactsByDesk   map[string][]*models.Contact      // deskID -> []Contact
 	
 	accountCounter      int
 	conversationCounter int
 	conversationMivCounter int
 	notificationCounter int
+	contactCounter      int
 	
 	mu         sync.RWMutex
 }
@@ -46,6 +49,8 @@ func NewMemoryStorage() *MemoryStorage {
 		conversationMivs:    make(map[string][]*models.ConversationMiv),
 		notifications:       make(map[string]*models.Notification),
 		notificationsByDesk: make(map[string][]*models.Notification),
+		contacts:            make(map[string]*models.Contact),
+		contactsByDesk:      make(map[string][]*models.Contact),
 	}
 }
 
@@ -561,4 +566,121 @@ func (s *MemoryStorage) MarkNotificationAsRead(id string) error {
 	notif.Read = true
 	notif.ReadAt = &now
 	return nil
+}
+
+// Contact storage methods
+
+// CreateContact creates a new contact for a desk
+func (s *MemoryStorage) CreateContact(contact *models.Contact) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	if contact.ID == "" {
+		s.contactCounter++
+		contact.ID = fmt.Sprintf("contact-%d", s.contactCounter)
+	}
+	
+	now := time.Now()
+	if contact.CreatedAt.IsZero() {
+		contact.CreatedAt = now
+	}
+	contact.UpdatedAt = now
+	
+	s.contacts[contact.ID] = contact
+	s.contactsByDesk[contact.DeskID] = append(s.contactsByDesk[contact.DeskID], contact)
+	
+	return nil
+}
+
+// GetContact retrieves a contact by ID
+func (s *MemoryStorage) GetContact(id string) (*models.Contact, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	
+	contact, exists := s.contacts[id]
+	if !exists {
+		return nil, fmt.Errorf("contact not found: %s", id)
+	}
+	
+	return contact, nil
+}
+
+// ListContactsForDesk retrieves all contacts for a desk
+func (s *MemoryStorage) ListContactsForDesk(deskID string) ([]*models.Contact, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	
+	contacts, exists := s.contactsByDesk[deskID]
+	if !exists {
+		return []*models.Contact{}, nil
+	}
+	
+	return contacts, nil
+}
+
+// UpdateContact updates an existing contact
+func (s *MemoryStorage) UpdateContact(contact *models.Contact) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	existing, exists := s.contacts[contact.ID]
+	if !exists {
+		return fmt.Errorf("contact not found: %s", contact.ID)
+	}
+	
+	// Update fields
+	if contact.Name != "" {
+		existing.Name = contact.Name
+	}
+	if contact.DeskIDRef != "" {
+		existing.DeskIDRef = contact.DeskIDRef
+	}
+	existing.Notes = contact.Notes
+	existing.UpdatedAt = time.Now()
+	
+	return nil
+}
+
+// DeleteContact deletes a contact
+func (s *MemoryStorage) DeleteContact(id string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	contact, exists := s.contacts[id]
+	if !exists {
+		return fmt.Errorf("contact not found: %s", id)
+	}
+	
+	// Remove from main map
+	delete(s.contacts, id)
+	
+	// Remove from desk contacts
+	deskContacts := s.contactsByDesk[contact.DeskID]
+	for i, c := range deskContacts {
+		if c.ID == id {
+			s.contactsByDesk[contact.DeskID] = append(deskContacts[:i], deskContacts[i+1:]...)
+			break
+		}
+	}
+	
+	return nil
+}
+
+// GetContactByDeskIDRef finds a contact by desk ID reference
+func (s *MemoryStorage) GetContactByDeskIDRef(deskID, deskIDRef string) (*models.Contact, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	
+	contacts, exists := s.contactsByDesk[deskID]
+	if !exists {
+		return nil, fmt.Errorf("no contacts found for desk")
+	}
+	
+	for _, contact := range contacts {
+		if contact.DeskIDRef == deskIDRef {
+			return contact, nil
+		}
+	}
+	
+	return nil, fmt.Errorf("contact not found for desk ID: %s", deskIDRef)
 }

@@ -1,18 +1,47 @@
-import React, { useState } from 'react';
-import { CreateMivRequest } from '../types';
+import React, { useState, useEffect } from 'react';
+import { CreateMivRequest, Contact } from '../types';
+import * as api from '../api/client';
 import './ComposeMiv.css';
 
 interface ComposeMivProps {
   onSend: (request: CreateMivRequest) => Promise<void>;
   onCancel: () => void;
+  deskId: string;
 }
 
-const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel }) => {
+const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => {
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [showContactDropdown, setShowContactDropdown] = useState(false);
+  const [contactSearchTerm, setContactSearchTerm] = useState('');
+
+  useEffect(() => {
+    const loadContacts = async () => {
+      try {
+        const response = await api.listContacts(deskId);
+        setContacts(response.contacts);
+      } catch (err) {
+        console.error('Failed to load contacts:', err);
+      }
+    };
+    
+    loadContacts();
+  }, [deskId]);
+
+  const filteredContacts = contacts.filter(contact => 
+    contact.name.toLowerCase().includes(contactSearchTerm.toLowerCase()) ||
+    contact.desk_id_ref.includes(contactSearchTerm.replace(/\D/g, ''))
+  );
+
+  const selectContact = (contact: Contact) => {
+    setTo(contact.desk_id_ref);
+    setContactSearchTerm(contact.name);
+    setShowContactDropdown(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,9 +87,31 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel }) => {
     }
   };
 
-  const handleToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-    setTo(value);
+  const handleContactSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setContactSearchTerm(e.target.value);
+    setShowContactDropdown(true);
+    // If typing a phone number, also set the 'to' field
+    const digits = e.target.value.replace(/\D/g, '');
+    if (digits) {
+      setTo(digits.slice(0, 10));
+    } else {
+      setTo('');
+    }
+  };
+
+  const getRecipientDisplay = () => {
+    if (contactSearchTerm) {
+      return contactSearchTerm;
+    }
+    if (to) {
+      // Check if this desk ID matches a contact
+      const contact = contacts.find(c => c.desk_id_ref === to);
+      if (contact) {
+        return contact.name;
+      }
+      return formatPhoneId(to);
+    }
+    return '';
   };
 
   return (
@@ -74,15 +125,37 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel }) => {
         
         <div className="form-group">
           <label htmlFor="to">To:</label>
-          <input
-            id="to"
-            type="text"
-            value={formatPhoneId(to)}
-            onChange={handleToChange}
-            placeholder="(555) 123-4567"
-            disabled={isSending}
-          />
-          <span className="help-text">Enter recipient's 10-digit ID</span>
+          <div className="recipient-input-container">
+            <input
+              id="to"
+              type="text"
+              value={getRecipientDisplay()}
+              onChange={handleContactSearchChange}
+              onFocus={() => setShowContactDropdown(true)}
+              onBlur={() => setTimeout(() => setShowContactDropdown(false), 200)}
+              placeholder="Search contacts or enter (555) 123-4567"
+              disabled={isSending}
+              autoComplete="off"
+            />
+            {showContactDropdown && filteredContacts.length > 0 && (
+              <div className="contact-dropdown">
+                {filteredContacts.map(contact => (
+                  <div 
+                    key={contact.id}
+                    className="contact-dropdown-item"
+                    onClick={() => selectContact(contact)}
+                  >
+                    <div className="contact-dropdown-name">{contact.name}</div>
+                    <div className="contact-dropdown-id">{formatPhoneId(contact.desk_id_ref)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <span className="help-text">
+            {to && !contactSearchTerm && `Sending to: ${formatPhoneId(to)}`}
+            {!to && 'Search for a contact or enter a 10-digit ID'}
+          </span>
         </div>
 
         <div className="form-group">

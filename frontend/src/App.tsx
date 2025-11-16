@@ -7,6 +7,7 @@ import BasketView from './components/BasketView';
 import MivDetailWithContext from './components/MivDetailWithContext';
 import NotificationPanel from './components/NotificationPanel';
 import ComposeMiv from './components/ComposeMiv';
+import ContactManager from './components/ContactManager';
 import {
   Account,
   Desk,
@@ -21,7 +22,7 @@ import {
 import * as api from './api/client';
 import './App.css';
 
-type View = 'baskets' | 'conversations' | 'compose' | 'notifications';
+type View = 'baskets' | 'conversations' | 'compose' | 'notifications' | 'contacts';
 
 function App() {
   // Authentication state
@@ -471,6 +472,12 @@ function App() {
               {basketCounts.archived > 0 && <span className="badge">{basketCounts.archived}</span>}
             </button>
             <button
+              className={currentView === 'contacts' ? 'active' : ''}
+              onClick={() => setCurrentView('contacts')}
+            >
+              👥 Contacts
+            </button>
+            <button
               className={currentView === 'notifications' ? 'active' : ''}
               onClick={() => setCurrentView('notifications')}
             >
@@ -492,6 +499,7 @@ function App() {
           <ComposeMiv
             onSend={handleSendConversation}
             onCancel={() => setCurrentView('baskets')}
+            deskId={activeDesk.id}
           />
         ) : currentView === 'notifications' ? (
           <div className="notifications-view">
@@ -501,6 +509,8 @@ function App() {
               onMarkAsRead={handleMarkNotificationAsRead}
             />
           </div>
+        ) : currentView === 'contacts' ? (
+          <ContactManager deskId={activeDesk.id} />
         ) : currentView === 'baskets' ? (
           <>
             <div className="basket-list-container">

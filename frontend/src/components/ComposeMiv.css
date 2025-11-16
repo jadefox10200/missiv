@@ -72,6 +72,53 @@
   margin-top: 4px;
 }
 
+.recipient-input-container {
+  position: relative;
+}
+
+.contact-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.contact-dropdown-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.contact-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.contact-dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.contact-dropdown-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.contact-dropdown-id {
+  font-size: 12px;
+  color: #666;
+  font-family: monospace;
+}
+
 .error-message {
   background-color: #ffebee;
   color: #c62828;

@@ -626,3 +626,116 @@ func (s *Server) markMivAsRead(c *gin.Context) {
 
 	c.JSON(http.StatusOK, miv)
 }
+
+// Contact handlers
+
+func (s *Server) createContact(c *gin.Context) {
+	deskID := c.Param("desk_id")
+	
+	var req models.CreateContactRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Verify desk exists
+	_, err := s.storage.GetDesk(deskID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Desk not found"})
+		return
+	}
+	
+	contact := &models.Contact{
+		DeskID:    deskID,
+		Name:      req.Name,
+		DeskIDRef: req.DeskIDRef,
+		Notes:     req.Notes,
+	}
+	
+	if err := s.storage.CreateContact(contact); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create contact"})
+		return
+	}
+	
+	c.JSON(http.StatusCreated, contact)
+}
+
+func (s *Server) listContacts(c *gin.Context) {
+	deskID := c.Param("desk_id")
+	
+	// Verify desk exists
+	_, err := s.storage.GetDesk(deskID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Desk not found"})
+		return
+	}
+	
+	contacts, err := s.storage.ListContactsForDesk(deskID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list contacts"})
+		return
+	}
+	
+	response := &models.ListContactsResponse{
+		Contacts: contacts,
+		Total:    len(contacts),
+	}
+	
+	c.JSON(http.StatusOK, response)
+}
+
+func (s *Server) getContact(c *gin.Context) {
+	contactID := c.Param("contact_id")
+	
+	contact, err := s.storage.GetContact(contactID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Contact not found"})
+		return
+	}
+	
+	c.JSON(http.StatusOK, contact)
+}
+
+func (s *Server) updateContact(c *gin.Context) {
+	contactID := c.Param("contact_id")
+	
+	var req models.UpdateContactRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Get existing contact
+	existing, err := s.storage.GetContact(contactID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Contact not found"})
+		return
+	}
+	
+	// Update fields
+	if req.Name != "" {
+		existing.Name = req.Name
+	}
+	if req.DeskIDRef != "" {
+		existing.DeskIDRef = req.DeskIDRef
+	}
+	existing.Notes = req.Notes
+	
+	if err := s.storage.UpdateContact(existing); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update contact"})
+		return
+	}
+	
+	c.JSON(http.StatusOK, existing)
+}
+
+func (s *Server) deleteContact(c *gin.Context) {
+	contactID := c.Param("contact_id")
+	
+	if err := s.storage.DeleteContact(contactID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Contact not found"})
+		return
+	}
+	
+	c.JSON(http.StatusNoContent, nil)
+}
