@@ -313,16 +313,37 @@ func (s *MemoryStorage) GetConversation(id string) (*models.Conversation, error)
 	return conv, nil
 }
 
-// ListConversationsByDesk retrieves all conversations for a desk
+// ListConversationsByDesk retrieves all conversations for a desk (either as creator or participant)
 func (s *MemoryStorage) ListConversationsByDesk(deskID string) ([]*models.Conversation, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	
-	var result []*models.Conversation
+	// Use a map to track unique conversations (avoid duplicates)
+	conversationMap := make(map[string]*models.Conversation)
+	
+	// First, add conversations created by this desk
 	for _, conv := range s.conversations {
 		if conv.DeskID == deskID {
-			result = append(result, conv)
+			conversationMap[conv.ID] = conv
 		}
+	}
+	
+	// Then, add conversations where this desk is a participant (sent to or received from)
+	for convID, mivs := range s.conversationMivs {
+		for _, miv := range mivs {
+			if miv.To == deskID || miv.From == deskID {
+				if conv, exists := s.conversations[convID]; exists {
+					conversationMap[convID] = conv
+				}
+				break // Only need to find one miv to include the conversation
+			}
+		}
+	}
+	
+	// Convert map to slice
+	var result []*models.Conversation
+	for _, conv := range conversationMap {
+		result = append(result, conv)
 	}
 	
 	return result, nil
