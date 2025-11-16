@@ -23,6 +23,11 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
         const allMivs: ConversationMiv[] = [];
         
         for (const conv of response.conversations) {
+          // Skip archived conversations unless viewing archived basket
+          if (conv.conversation.is_archived && selectedBasket !== 'ARCHIVED') {
+            continue;
+          }
+          
           // Get full conversation to access all mivs
           const fullConv = await api.getConversation(conv.conversation.id);
           const filteredMivs = fullConv.mivs.filter(miv => {
@@ -33,15 +38,12 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
             } else if (selectedBasket === 'PENDING') {
               // Read but not replied messages
               return miv.to === deskId && miv.read_at;
-            } else if (selectedBasket === 'OUT') {
-              // Sent messages without read receipt
-              return miv.from === deskId && !miv.read_at;
-            } else if (selectedBasket === 'UNANSWERED') {
-              // Messages read by recipient but not answered
-              return miv.from === deskId && miv.read_at;
+            } else if (selectedBasket === 'SENT') {
+              // Sent messages without replies (combines old OUT and UNANSWERED)
+              return miv.from === deskId;
             } else if (selectedBasket === 'ARCHIVED') {
-              // Archived conversations (simplified - all old messages)
-              return miv.state === 'ARCHIVED';
+              // Show all messages from archived conversations
+              return conv.conversation.is_archived;
             }
             return false;
           });
@@ -93,10 +95,8 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
         return 'Inbox';
       case 'PENDING':
         return 'Pending';
-      case 'OUT':
+      case 'SENT':
         return 'Sent';
-      case 'UNANSWERED':
-        return 'Unanswered';
       case 'ARCHIVED':
         return 'Archived';
       default:
@@ -110,10 +110,8 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
         return 'Unread received messages';
       case 'PENDING':
         return 'Messages you\'ve looked at but not answered';
-      case 'OUT':
-        return 'Sent messages awaiting read receipt';
-      case 'UNANSWERED':
-        return 'Messages read by recipient but not answered';
+      case 'SENT':
+        return 'Sent messages awaiting replies';
       case 'ARCHIVED':
         return 'Archived conversations';
       default:
@@ -152,21 +150,40 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
               className={`basket-item ${selectedMivId === miv.id ? 'selected' : ''}`}
               onClick={() => onMivClick(miv)}
             >
-              <div className="basket-item-header">
-                <span className="basket-from">
-                  {miv.from === deskId ? `To: ${formatPhoneId(miv.to)}` : `From: ${formatPhoneId(miv.from)}`}
-                </span>
-                <span className="basket-date">{formatDate(miv.created_at)}</span>
-              </div>
-              <div className="basket-subject">{miv.subject}</div>
-              <div className="basket-preview">
-                {atob(miv.body).substring(0, 100)}
-                {atob(miv.body).length > 100 ? '...' : ''}
-              </div>
-              <div className="basket-meta">
-                <span className="basket-seq">#{miv.seq_no} in conversation</span>
-                {miv.read_at && <span className="basket-read">✓ Read</span>}
-              </div>
+              {selectedBasket === 'IN' ? (
+                // Simplified INBOX view: only from, date/time, and subject
+                <>
+                  <div className="basket-item-header">
+                    <span className="basket-from">From: {formatPhoneId(miv.from)}</span>
+                    <span className="basket-date">{formatDate(miv.created_at)}</span>
+                  </div>
+                  <div className="basket-subject">{miv.subject}</div>
+                </>
+              ) : (
+                // Full view for other baskets
+                <>
+                  <div className="basket-item-header">
+                    <span className="basket-from">
+                      {miv.from === deskId ? `To: ${formatPhoneId(miv.to)}` : `From: ${formatPhoneId(miv.from)}`}
+                    </span>
+                    <span className="basket-date">{formatDate(miv.created_at)}</span>
+                  </div>
+                  <div className="basket-subject">{miv.subject}</div>
+                  <div className="basket-preview">
+                    {atob(miv.body).substring(0, 100)}
+                    {atob(miv.body).length > 100 ? '...' : ''}
+                  </div>
+                  <div className="basket-meta">
+                    <span className="basket-seq">#{miv.seq_no} in conversation</span>
+                    {selectedBasket === 'SENT' && miv.read_at && (
+                      <span className="basket-read">✓ Read</span>
+                    )}
+                    {selectedBasket === 'SENT' && !miv.read_at && (
+                      <span className="basket-unread">○ Unread</span>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           ))
         )}

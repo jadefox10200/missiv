@@ -84,8 +84,8 @@ func (s *Server) setupRoutes() {
 		// Filtered miv endpoints
 		api.GET("/mivs/inbox", s.getInbox)
 		api.GET("/mivs/pending", s.getPending)
-		api.GET("/mivs/sent", s.getSent)
-		api.GET("/mivs/unanswered", s.getUnanswered)
+		api.GET("/mivs/sent", s.getSent) // Returns SENT state (combines old OUT and UNANSWERED)
+		api.GET("/mivs/unanswered", s.getUnanswered) // DEPRECATED: Use /mivs/sent instead
 		api.GET("/mivs/archived", s.getArchived)
 	}
 	
@@ -260,23 +260,25 @@ func (s *Server) getPending(c *gin.Context) {
 }
 
 func (s *Server) getSent(c *gin.Context) {
-	mivs, err := s.storage.ListMivs(models.StateOUT)
+	sentMivs, err := s.storage.ListMivs(models.StateSENT)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	
-	c.JSON(http.StatusOK, mivs)
+	// For backwards compatibility, also include old OUT and UNANSWERED states
+	outMivs, _ := s.storage.ListMivs(models.StateOUT)
+	unansweredMivs, _ := s.storage.ListMivs(models.StateUNANSWERED)
+	
+	allMivs := append(sentMivs, outMivs...)
+	allMivs = append(allMivs, unansweredMivs...)
+	
+	c.JSON(http.StatusOK, allMivs)
 }
 
 func (s *Server) getUnanswered(c *gin.Context) {
-	mivs, err := s.storage.ListMivs(models.StateUNANSWERED)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	
-	c.JSON(http.StatusOK, mivs)
+	// DEPRECATED: redirect to getSent for backwards compatibility
+	s.getSent(c)
 }
 
 func (s *Server) getArchived(c *gin.Context) {

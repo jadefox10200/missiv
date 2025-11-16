@@ -78,8 +78,13 @@ function App() {
           const desk = deskList.find(d => d.id === activeDeskId) || deskList[0];
           setActiveDesk(desk);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to load desks:', err);
+        // If there's an authentication error, clear the session
+        if (err.message && (err.message.includes('401') || err.message.includes('Unauthorized') || err.message.includes('not found'))) {
+          alert('Your session is no longer valid. Please sign in again.');
+          handleLogout();
+        }
       }
     };
 
@@ -101,8 +106,13 @@ function App() {
         setConversations(convResponse.conversations);
         setNotifications(notifResponse.notifications);
         setUnreadCount(notifResponse.unread_count);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to load data:', err);
+        // If there's an authentication error, clear the session
+        if (err.message && (err.message.includes('401') || err.message.includes('Unauthorized'))) {
+          alert('Your session is no longer valid. Please sign in again.');
+          handleLogout();
+        }
       }
     };
 
@@ -367,24 +377,14 @@ function App() {
               ⏳ Pending
             </button>
             <button
-              className={currentView === 'baskets' && selectedBasket === 'OUT' ? 'active' : ''}
+              className={currentView === 'baskets' && selectedBasket === 'SENT' ? 'active' : ''}
               onClick={() => {
                 setCurrentView('baskets');
-                setSelectedBasket('OUT');
+                setSelectedBasket('SENT');
                 setSelectedMiv(null);
               }}
             >
-              📤 Out
-            </button>
-            <button
-              className={currentView === 'baskets' && selectedBasket === 'UNANSWERED' ? 'active' : ''}
-              onClick={() => {
-                setCurrentView('baskets');
-                setSelectedBasket('UNANSWERED');
-                setSelectedMiv(null);
-              }}
-            >
-              ❓ Unanswered
+              📤 Sent
             </button>
             <button
               className={currentView === 'baskets' && selectedBasket === 'ARCHIVED' ? 'active' : ''}

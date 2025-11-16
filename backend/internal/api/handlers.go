@@ -423,7 +423,7 @@ func (s *Server) createConversation(c *gin.Context) {
 		To:             req.To,
 		Subject:        req.Subject,
 		Body:           base64.StdEncoding.EncodeToString([]byte(req.Body)),
-		State:          models.StatePENDING,
+		State:          models.StateSENT, // Use SENT state for newly created mivs
 		IsEncrypted:    false,
 	}
 
@@ -504,7 +504,7 @@ func (s *Server) replyToConversation(c *gin.Context) {
 		To:             recipientID,
 		Subject:        conv.Subject,
 		Body:           base64.StdEncoding.EncodeToString([]byte(req.Body)),
-		State:          models.StatePENDING,
+		State:          models.StateSENT, // Use SENT state for replies
 		IsEncrypted:    false,
 		IsAck:          req.IsAck,
 	}
