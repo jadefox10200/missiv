@@ -146,6 +146,17 @@ function App() {
     let sentCount = 0;
     let archivedCount = 0;
     
+    // Handle case where convs might be null or undefined
+    if (!convs || !Array.isArray(convs)) {
+      setBasketCounts({
+        inbox: 0,
+        pending: 0,
+        sent: 0,
+        archived: 0
+      });
+      return;
+    }
+    
     for (const conv of convs) {
       try {
         const fullConv = await api.getConversation(conv.conversation.id);
