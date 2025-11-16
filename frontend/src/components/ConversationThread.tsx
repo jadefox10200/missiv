@@ -42,6 +42,24 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
     setShowAckConfirm(false);
   };
 
+  // Ping-pong style: only show reply buttons if latest miv is to us and unanswered
+  const shouldShowReplyButtons = () => {
+    if (!conversation || conversation.mivs.length === 0) return false;
+    
+    const latestMiv = conversation.mivs[conversation.mivs.length - 1];
+    
+    // Only show if the latest message is TO us (not from us)
+    if (latestMiv.to !== currentDeskId) return false;
+    
+    // Don't show if already ACK'd
+    if (latestMiv.is_ack) return false;
+    
+    // Don't show if archived
+    if (conversation.conversation.is_archived) return false;
+    
+    return true;
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -55,7 +73,7 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
 
   const formatDeskId = (id: string) => {
     if (id.length === 10) {
-      return `(${id.slice(0, 3)}) ${id.slice(3, 6)}-${id.slice(6)}`;
+      return `${id.slice(0, 4)}-${id.slice(4, 6)}-${id.slice(6)}`;
     }
     return id;
   };
@@ -87,24 +105,25 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
         </div>
       </div>
 
-      <div className="conversation-messages">
+      <div className="conversation-messages-inbox-style">
         {conversation.mivs.map((miv, index) => {
           const isFromMe = miv.from === currentDeskId;
           
           return (
             <div
               key={miv.id}
-              className={`message ${isFromMe ? 'message-sent' : 'message-received'}`}
+              className="message-inbox-item"
             >
-              <div className="message-header">
-                <div className="message-from">
-                  <span className="from-label">{isFromMe ? 'You' : getDisplayName(miv.from)}</span>
-                  <span className="message-seq">#{miv.seq_no}</span>
-                </div>
-                <div className="message-time">{formatDate(miv.created_at)}</div>
+              {/* INBOX-style layout: FROM, DATE, SUBJECT (inline) */}
+              <div className="message-inbox-header">
+                <span className="message-inbox-from">
+                  {isFromMe ? `To: ${getDisplayName(miv.to)}` : `From: ${getDisplayName(miv.from)}`}
+                </span>
+                <span className="message-inbox-date">{formatDate(miv.created_at)}</span>
+                <span className="message-inbox-seq">#{miv.seq_no}</span>
               </div>
               
-              <div className="message-body">
+              <div className="message-inbox-body">
                 {miv.is_ack ? (
                   <em>ACK - Conversation ended</em>
                 ) : (
@@ -129,71 +148,75 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
       </div>
 
       <div className="conversation-reply">
-        {showAckConfirm ? (
-          <div className="ack-confirm">
-            <p>Are you sure you want to end this conversation with an ACK?</p>
-            <div className="ack-actions">
-              <button onClick={handleAck} className="btn btn-danger">
-                Yes, Send ACK
-              </button>
-              <button
-                onClick={() => setShowAckConfirm(false)}
-                className="btn"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : showReplyForm ? (
-          <form onSubmit={handleReply} className="reply-form">
-            <textarea
-              value={replyBody}
-              onChange={(e) => setReplyBody(e.target.value)}
-              placeholder="Type your reply..."
-              rows={4}
-              autoFocus
-            />
-            <div className="reply-actions">
-              <button type="submit" className="btn btn-primary">
-                Send Reply
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={() => {
-                  setShowReplyForm(false);
-                  setShowAckConfirm(true);
-                }}
-              >
-                Send ACK
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setShowReplyForm(false);
-                  setReplyBody('');
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="reply-buttons">
-            <button
-              className="btn btn-reply"
-              onClick={() => setShowReplyForm(true)}
-            >
-              Reply to conversation
-            </button>
-            <button
-              className="btn btn-ack"
-              onClick={() => setShowAckConfirm(true)}
-            >
-              Send ACK (End Conversation)
-            </button>
-          </div>
+        {shouldShowReplyButtons() && (
+          <>
+            {showAckConfirm ? (
+              <div className="ack-confirm">
+                <p>Are you sure you want to end this conversation with an ACK?</p>
+                <div className="ack-actions">
+                  <button onClick={handleAck} className="btn btn-danger">
+                    Yes, Send ACK
+                  </button>
+                  <button
+                    onClick={() => setShowAckConfirm(false)}
+                    className="btn"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : showReplyForm ? (
+              <form onSubmit={handleReply} className="reply-form">
+                <textarea
+                  value={replyBody}
+                  onChange={(e) => setReplyBody(e.target.value)}
+                  placeholder="Type your reply..."
+                  rows={4}
+                  autoFocus
+                />
+                <div className="reply-actions">
+                  <button type="submit" className="btn btn-primary">
+                    Send Reply
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => {
+                      setShowReplyForm(false);
+                      setShowAckConfirm(true);
+                    }}
+                  >
+                    Send ACK
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setShowReplyForm(false);
+                      setReplyBody('');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="reply-buttons">
+                <button
+                  className="btn btn-reply"
+                  onClick={() => setShowReplyForm(true)}
+                >
+                  Reply to conversation
+                </button>
+                <button
+                  className="btn btn-ack"
+                  onClick={() => setShowAckConfirm(true)}
+                >
+                  Send ACK (End Conversation)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

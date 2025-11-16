@@ -27,7 +27,7 @@ const MivList: React.FC<MivListProps> = ({ mivs, onMivClick, selectedMivId }) =>
 
   const formatPhoneId = (id: string) => {
     if (id.length === 10) {
-      return `(${id.slice(0, 3)}) ${id.slice(3, 6)}-${id.slice(6)}`;
+      return `${id.slice(0, 4)}-${id.slice(4, 6)}-${id.slice(6)}`;
     }
     return id;
   };

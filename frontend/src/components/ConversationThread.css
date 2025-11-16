@@ -31,6 +31,65 @@
   color: #868e96;
 }
 
+.conversation-messages-inbox-style {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message-inbox-item {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  transition: all 0.2s;
+}
+
+.message-inbox-item:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.12);
+}
+
+.message-inbox-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.message-inbox-from {
+  font-weight: 600;
+  color: #333;
+  min-width: 180px;
+  flex-shrink: 0;
+}
+
+.message-inbox-date {
+  font-size: 13px;
+  color: #666;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.message-inbox-seq {
+  font-size: 12px;
+  color: #999;
+  font-family: 'Courier New', monospace;
+}
+
+.message-inbox-body {
+  font-size: 15px;
+  color: #212529;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  padding-left: 0;
+}
+
 .conversation-messages {
   flex: 1;
   overflow-y: auto;

@@ -77,13 +77,13 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
     // Remove non-digits
     const digits = value.replace(/\D/g, '');
     
-    // Format as (XXX) XXX-XXXX
-    if (digits.length <= 3) {
+    // Format as XXXX-XX-XXXX
+    if (digits.length <= 4) {
       return digits;
     } else if (digits.length <= 6) {
-      return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      return `${digits.slice(0, 4)}-${digits.slice(4)}`;
     } else {
-      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+      return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 10)}`;
     }
   };
 
@@ -133,7 +133,7 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
               onChange={handleContactSearchChange}
               onFocus={() => setShowContactDropdown(true)}
               onBlur={() => setTimeout(() => setShowContactDropdown(false), 200)}
-              placeholder="Search contacts or enter (555) 123-4567"
+              placeholder="Search contacts or enter 5551-23-4567"
               disabled={isSending}
               autoComplete="off"
             />
