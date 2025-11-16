@@ -197,20 +197,30 @@ function App() {
 
   const handleMivClick = async (miv: ConversationMiv) => {
     setSelectedMiv(miv);
-    // When clicking a miv in a basket, automatically mark it as read if it's incoming
+    // When clicking a miv in a basket, automatically mark it as read if it's incoming and unread
     if (miv.to === activeDesk?.id && !miv.read_at) {
-      // In a real implementation, mark as read
+      try {
+        await api.markMivAsRead(miv.id);
+        // Update the selected miv with read status
+        const updatedMiv = { ...miv, read_at: new Date().toISOString() };
+        setSelectedMiv(updatedMiv);
+      } catch (err) {
+        console.error('Failed to mark miv as read:', err);
+      }
     }
   };
 
-  const handleMivReply = async (body: string) => {
+  const handleMivReply = async (body: string, isAck: boolean = false) => {
     if (!activeDesk || !selectedMiv) return;
 
     try {
-      await api.replyToConversation(selectedMiv.conversation_id, activeDesk.id, { body });
+      await api.replyToConversation(selectedMiv.conversation_id, activeDesk.id, { 
+        body,
+        is_ack: isAck 
+      });
       
       // Reload the miv to show the updated conversation
-      const response = await api.getConversation(selectedMiv.conversation_id);
+      const response = await api.getConversation(selectedMiv.conversation_id, activeDesk.id);
       const updatedMiv = response.mivs.find(m => m.id === selectedMiv.id) || selectedMiv;
       setSelectedMiv(updatedMiv);
     } catch (err) {
@@ -220,14 +230,10 @@ function App() {
 
   const handleConversationClick = async (conv: ConversationWithLatest) => {
     try {
-      const response = await api.getConversation(conv.conversation.id);
+      // Pass desk_id to automatically mark messages as read
+      const response = await api.getConversation(conv.conversation.id, activeDesk?.id);
       setSelectedConversation(response);
       setCurrentView('conversations');
-
-      // Mark unread messages as read
-      if (conv.unread_count > 0) {
-        // In a real implementation, mark messages as read
-      }
     } catch (err) {
       console.error('Failed to load conversation:', err);
     }
@@ -247,14 +253,17 @@ function App() {
     }
   };
 
-  const handleReply = async (body: string) => {
+  const handleReply = async (body: string, isAck: boolean = false) => {
     if (!activeDesk || !selectedConversation) return;
 
     try {
-      await api.replyToConversation(selectedConversation.conversation.id, activeDesk.id, { body });
+      await api.replyToConversation(selectedConversation.conversation.id, activeDesk.id, { 
+        body,
+        is_ack: isAck 
+      });
       
       // Reload conversation
-      const response = await api.getConversation(selectedConversation.conversation.id);
+      const response = await api.getConversation(selectedConversation.conversation.id, activeDesk.id);
       setSelectedConversation(response);
       await refreshConversations();
     } catch (err) {
@@ -265,7 +274,8 @@ function App() {
   const handleNotificationClick = async (notification: Notification) => {
     if (notification.conversation_id) {
       try {
-        const response = await api.getConversation(notification.conversation_id);
+        // Pass desk_id to automatically mark messages as read
+        const response = await api.getConversation(notification.conversation_id, activeDesk?.id);
         setSelectedConversation(response);
         setCurrentView('conversations');
 

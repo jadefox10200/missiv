@@ -363,6 +363,7 @@ func (s *Server) listConversations(c *gin.Context) {
 
 func (s *Server) getConversation(c *gin.Context) {
 	id := c.Param("id")
+	deskID := c.Query("desk_id")
 
 	conv, err := s.storage.GetConversation(id)
 	if err != nil {
@@ -374,6 +375,13 @@ func (s *Server) getConversation(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// If desk_id is provided, automatically mark unread incoming mivs as read
+	if deskID != "" {
+		s.storage.MarkConversationMivsAsRead(id, deskID)
+		// Reload mivs to get updated read_at timestamps
+		mivs, _ = s.storage.GetConversationMivs(id)
 	}
 
 	c.JSON(http.StatusOK, models.GetConversationResponse{
@@ -498,6 +506,7 @@ func (s *Server) replyToConversation(c *gin.Context) {
 		Body:           base64.StdEncoding.EncodeToString([]byte(req.Body)),
 		State:          models.StatePENDING,
 		IsEncrypted:    false,
+		IsAck:          req.IsAck,
 	}
 
 	if err := s.storage.CreateConversationMiv(miv); err != nil {
@@ -505,13 +514,29 @@ func (s *Server) replyToConversation(c *gin.Context) {
 		return
 	}
 
+	// If this is an ACK message, archive the conversation
+	if req.IsAck {
+		conv.IsArchived = true
+		s.storage.UpdateConversation(conv)
+	} else if conv.IsArchived {
+		// If conversation was archived but we got a non-ACK reply, unarchive it
+		conv.IsArchived = false
+		s.storage.UpdateConversation(conv)
+	}
+
 	// Create notification for recipient
+	notifType := models.NotificationTypeReply
+	message := fmt.Sprintf("Reply from %s in: %s", deskID, conv.Subject)
+	if req.IsAck {
+		message = fmt.Sprintf("ACK from %s - conversation ended: %s", deskID, conv.Subject)
+	}
+	
 	notification := &models.Notification{
 		DeskID:         recipientID,
-		Type:           models.NotificationTypeReply,
+		Type:           notifType,
 		MivID:          miv.ID,
 		ConversationID: conversationID,
-		Message:        fmt.Sprintf("Reply from %s in: %s", deskID, conv.Subject),
+		Message:        message,
 		Read:           false,
 	}
 	s.storage.CreateNotification(notification)
@@ -580,4 +605,24 @@ func (s *Server) markNotificationAsRead(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Notification marked as read"})
+}
+
+// Miv read handlers
+
+func (s *Server) markMivAsRead(c *gin.Context) {
+	mivID := c.Param("id")
+
+	if err := s.storage.MarkConversationMivAsRead(mivID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get the updated miv to return
+	miv, err := s.storage.GetConversationMiv(mivID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get updated miv"})
+		return
+	}
+
+	c.JSON(http.StatusOK, miv)
 }

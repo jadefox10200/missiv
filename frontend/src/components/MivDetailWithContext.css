@@ -199,3 +199,61 @@
   text-align: center;
   color: #999;
 }
+
+.btn-ack {
+  padding: 10px 20px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  color: #856404;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn-ack:hover {
+  background: #ffe69c;
+  border-color: #ffb300;
+}
+
+.ack-confirm {
+  padding: 20px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.ack-confirm p {
+  margin: 0 0 15px 0;
+  color: #856404;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.ack-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.miv-body em {
+  color: #6c757d;
+  font-style: italic;
+}

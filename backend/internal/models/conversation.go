@@ -4,12 +4,13 @@ import "time"
 
 // Conversation represents a threaded conversation
 type Conversation struct {
-	ID        string    `json:"id"`         // Unique conversation ID
-	Subject   string    `json:"subject"`    // Conversation subject
-	DeskID    string    `json:"desk_id"`    // Desk this conversation belongs to
-	CreatedAt time.Time `json:"created_at"` // When the conversation was created
-	UpdatedAt time.Time `json:"updated_at"` // When the conversation was last updated
-	MivCount  int       `json:"miv_count"`  // Number of mivs in this conversation
+	ID         string    `json:"id"`         // Unique conversation ID
+	Subject    string    `json:"subject"`    // Conversation subject
+	DeskID     string    `json:"desk_id"`    // Desk this conversation belongs to
+	CreatedAt  time.Time `json:"created_at"` // When the conversation was created
+	UpdatedAt  time.Time `json:"updated_at"` // When the conversation was last updated
+	MivCount   int       `json:"miv_count"`  // Number of mivs in this conversation
+	IsArchived bool      `json:"is_archived"` // Whether this conversation is archived
 }
 
 // ConversationMiv represents a miv within a conversation thread
@@ -26,7 +27,8 @@ type ConversationMiv struct {
 	SentAt         *time.Time `json:"sent_at,omitempty"`     // When the miv was sent
 	ReceivedAt     *time.Time `json:"received_at,omitempty"` // When the miv was received
 	ReadAt         *time.Time `json:"read_at,omitempty"`     // When the miv was read
-	IsEncrypted    bool       `json:"is_encrypted"`    // Whether the body is encrypted
+	IsEncrypted    bool       `json:"is_encrypted"`          // Whether the body is encrypted
+	IsAck          bool       `json:"is_ack"`                // Whether this is an ACK message
 }
 
 // CreateConversationRequest represents a request to create a new conversation
@@ -38,7 +40,8 @@ type CreateConversationRequest struct {
 
 // ReplyToConversationRequest represents a request to reply in a conversation
 type ReplyToConversationRequest struct {
-	Body string `json:"body" binding:"required"`
+	Body  string `json:"body" binding:"required"`
+	IsAck bool   `json:"is_ack"` // Whether this is an ACK message to end the conversation
 }
 
 // ListConversationsResponse represents a list of conversations with metadata

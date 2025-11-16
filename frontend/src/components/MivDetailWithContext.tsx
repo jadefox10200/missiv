@@ -6,7 +6,7 @@ import './MivDetailWithContext.css';
 interface MivDetailWithContextProps {
   miv: ConversationMiv;
   currentDeskId: string;
-  onReply: (body: string) => void;
+  onReply: (body: string, isAck?: boolean) => void;
 }
 
 function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithContextProps) {
@@ -14,6 +14,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
   const [selectedMiv, setSelectedMiv] = useState<ConversationMiv>(miv);
   const [replyBody, setReplyBody] = useState('');
   const [showReply, setShowReply] = useState(false);
+  const [showAckConfirm, setShowAckConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,9 +44,14 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
     e.preventDefault();
     if (!replyBody.trim()) return;
 
-    await onReply(replyBody);
+    await onReply(replyBody, false);
     setReplyBody('');
     setShowReply(false);
+  };
+
+  const handleAck = async () => {
+    await onReply('ACK - Conversation ended', true);
+    setShowAckConfirm(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -129,19 +135,50 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
         </div>
 
         <div className="miv-body-section">
-          <pre className="miv-body">{atob(selectedMiv.body)}</pre>
+          <pre className="miv-body">
+            {selectedMiv.is_ack ? (
+              <em>ACK - Conversation ended</em>
+            ) : (
+              atob(selectedMiv.body)
+            )}
+          </pre>
         </div>
 
         <div className="miv-actions">
-          {selectedMiv.to === currentDeskId && !showReply && (
-            <button 
-              className="btn btn-primary" 
-              onClick={() => setShowReply(true)}
-            >
-              Reply
-            </button>
+          {selectedMiv.to === currentDeskId && !showReply && !showAckConfirm && (
+            <>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => setShowReply(true)}
+              >
+                Reply
+              </button>
+              <button 
+                className="btn btn-ack" 
+                onClick={() => setShowAckConfirm(true)}
+              >
+                Send ACK
+              </button>
+            </>
           )}
         </div>
+
+        {showAckConfirm && (
+          <div className="ack-confirm">
+            <p>Are you sure you want to end this conversation with an ACK?</p>
+            <div className="ack-actions">
+              <button onClick={handleAck} className="btn btn-danger">
+                Yes, Send ACK
+              </button>
+              <button
+                onClick={() => setShowAckConfirm(false)}
+                className="btn"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {showReply && (
           <form onSubmit={handleReplySubmit} className="reply-form">
@@ -156,6 +193,16 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
             <div className="reply-actions">
               <button type="submit" className="btn btn-primary">
                 Send Reply
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={() => {
+                  setShowReply(false);
+                  setShowAckConfirm(true);
+                }}
+              >
+                Send ACK
               </button>
               <button 
                 type="button" 

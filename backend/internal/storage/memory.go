@@ -313,16 +313,37 @@ func (s *MemoryStorage) GetConversation(id string) (*models.Conversation, error)
 	return conv, nil
 }
 
-// ListConversationsByDesk retrieves all conversations for a desk
+// ListConversationsByDesk retrieves all conversations for a desk (either as creator or participant)
 func (s *MemoryStorage) ListConversationsByDesk(deskID string) ([]*models.Conversation, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	
-	var result []*models.Conversation
+	// Use a map to track unique conversations (avoid duplicates)
+	conversationMap := make(map[string]*models.Conversation)
+	
+	// First, add conversations created by this desk
 	for _, conv := range s.conversations {
 		if conv.DeskID == deskID {
-			result = append(result, conv)
+			conversationMap[conv.ID] = conv
 		}
+	}
+	
+	// Then, add conversations where this desk is a participant (sent to or received from)
+	for convID, mivs := range s.conversationMivs {
+		for _, miv := range mivs {
+			if miv.To == deskID || miv.From == deskID {
+				if conv, exists := s.conversations[convID]; exists {
+					conversationMap[convID] = conv
+				}
+				break // Only need to find one miv to include the conversation
+			}
+		}
+	}
+	
+	// Convert map to slice
+	var result []*models.Conversation
+	for _, conv := range conversationMap {
+		result = append(result, conv)
 	}
 	
 	return result, nil
@@ -409,6 +430,63 @@ func (s *MemoryStorage) UpdateConversationMiv(miv *models.ConversationMiv) error
 	}
 	
 	return fmt.Errorf("miv not found: %s", miv.ID)
+}
+
+// MarkConversationMivAsRead marks a specific miv as read
+func (s *MemoryStorage) MarkConversationMivAsRead(mivID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	// Find the miv across all conversations
+	for _, mivs := range s.conversationMivs {
+		for i, miv := range mivs {
+			if miv.ID == mivID && miv.ReadAt == nil {
+				now := time.Now()
+				mivs[i].ReadAt = &now
+				return nil
+			}
+		}
+	}
+	
+	return fmt.Errorf("miv not found or already read: %s", mivID)
+}
+
+// MarkConversationMivsAsRead marks all incoming unread mivs in a conversation as read for a specific desk
+func (s *MemoryStorage) MarkConversationMivsAsRead(conversationID string, deskID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	mivs, exists := s.conversationMivs[conversationID]
+	if !exists {
+		return fmt.Errorf("conversation not found: %s", conversationID)
+	}
+	
+	now := time.Now()
+	for i, miv := range mivs {
+		// Mark as read only if it's addressed to this desk and not already read
+		if miv.To == deskID && miv.ReadAt == nil {
+			mivs[i].ReadAt = &now
+		}
+	}
+	
+	return nil
+}
+
+// GetConversationMiv retrieves a specific miv by ID
+func (s *MemoryStorage) GetConversationMiv(mivID string) (*models.ConversationMiv, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	
+	// Find the miv across all conversations
+	for _, mivs := range s.conversationMivs {
+		for _, miv := range mivs {
+			if miv.ID == mivID {
+				return miv, nil
+			}
+		}
+	}
+	
+	return nil, fmt.Errorf("miv not found: %s", mivID)
 }
 
 // Notification methods
