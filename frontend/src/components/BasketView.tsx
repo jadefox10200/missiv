@@ -22,7 +22,10 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
         const response = await api.listConversations(deskId);
         const allMivs: ConversationMiv[] = [];
         
-        for (const conv of response.conversations) {
+        // Handle case where conversations might be null or undefined
+        const conversations = response?.conversations || [];
+        
+        for (const conv of conversations) {
           // Skip archived conversations unless viewing archived basket
           if (conv.conversation.is_archived && selectedBasket !== 'ARCHIVED') {
             continue;
