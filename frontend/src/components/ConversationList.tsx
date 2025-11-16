@@ -6,12 +6,14 @@ interface ConversationListProps {
   conversations: ConversationWithLatest[];
   selectedConversationId?: string;
   onConversationClick: (conversation: ConversationWithLatest) => void;
+  currentDeskId?: string;
 }
 
 function ConversationList({ 
   conversations, 
   selectedConversationId, 
-  onConversationClick 
+  onConversationClick,
+  currentDeskId 
 }: ConversationListProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -27,6 +29,25 @@ function ConversationList({
     } else {
       return date.toLocaleDateString();
     }
+  };
+
+  const formatPhoneId = (id: string) => {
+    if (id.length === 10) {
+      return `(${id.slice(0, 3)}) ${id.slice(3, 6)}-${id.slice(6)}`;
+    }
+    return id;
+  };
+
+  const getConversationPartner = (conv: ConversationWithLatest) => {
+    // Get the "other person" in the conversation
+    if (!conv.latest_miv || !currentDeskId) return 'Unknown';
+    
+    // If the latest miv is from us, the partner is the recipient
+    if (conv.latest_miv.from === currentDeskId) {
+      return formatPhoneId(conv.latest_miv.to);
+    }
+    // Otherwise, the partner is the sender
+    return formatPhoneId(conv.latest_miv.from);
   };
 
   if (!conversations || conversations.length === 0) {
@@ -62,26 +83,23 @@ function ConversationList({
             } ${conv.unread_count > 0 ? 'unread' : ''}`}
             onClick={() => onConversationClick(conv)}
           >
-            <div className="conversation-item-header">
-              <div className="conversation-subject">{conv.conversation.subject}</div>
-              <div className="conversation-time">
-                {formatDate(conv.conversation.updated_at)}
-              </div>
-            </div>
-            
-            {conv.latest_miv && (
-              <div className="conversation-preview">
-                {atob(conv.latest_miv.body).substring(0, 100)}
-                {atob(conv.latest_miv.body).length > 100 ? '...' : ''}
-              </div>
-            )}
-
-            <div className="conversation-meta">
-              <div className="conversation-count">
-                {conv.conversation.miv_count} {conv.conversation.miv_count === 1 ? 'message' : 'messages'}
-              </div>
+            {/* Thin-line format: FROM (partner) • DATE/TIME (range) • SUBJECT • COUNT */}
+            <div className="conversation-item-row">
+              <span className="conversation-partner">
+                {getConversationPartner(conv)}
+              </span>
+              <span className="conversation-separator">•</span>
+              <span className="conversation-date-range">
+                {formatDate(conv.conversation.created_at)} - {formatDate(conv.conversation.updated_at)}
+              </span>
+              <span className="conversation-separator">•</span>
+              <span className="conversation-subject">{conv.conversation.subject}</span>
+              <span className="conversation-separator">•</span>
+              <span className="conversation-miv-count">
+                {conv.conversation.miv_count} {conv.conversation.miv_count === 1 ? 'miv' : 'mivs'}
+              </span>
               {conv.unread_count > 0 && (
-                <div className="unread-badge">{conv.unread_count}</div>
+                <span className="unread-badge-inline">{conv.unread_count}</span>
               )}
             </div>
           </div>
