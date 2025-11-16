@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ConversationMiv, MivState } from '../types';
+import { ConversationMiv, MivState, Contact } from '../types';
 import * as api from '../api/client';
 import './BasketView.css';
 
@@ -13,11 +13,16 @@ interface BasketViewProps {
 function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: BasketViewProps) {
   const [mivs, setMivs] = useState<ConversationMiv[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contacts, setContacts] = useState<Contact[]>([]);
 
   useEffect(() => {
     const loadMivs = async () => {
       setLoading(true);
       try {
+        // Load contacts first
+        const contactsResponse = await api.listContacts(deskId);
+        setContacts(contactsResponse.contacts);
+        
         // Get all conversations and extract mivs matching the selected basket state
         const response = await api.listConversations(deskId);
         const allMivs: ConversationMiv[] = [];
@@ -99,6 +104,11 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
     return id;
   };
 
+  const getDisplayName = (deskIdRef: string) => {
+    const contact = contacts.find(c => c.desk_id_ref === deskIdRef);
+    return contact ? contact.name : formatPhoneId(deskIdRef);
+  };
+
   const getBasketTitle = () => {
     switch (selectedBasket) {
       case 'IN':
@@ -163,7 +173,7 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
               {/* Consistent thin-line format for INBOX, PENDING, SENT: FROM, TIME/DATE, SUBJECT */}
               <div className="basket-item-row">
                 <span className="basket-from">
-                  {miv.from === deskId ? `To: ${formatPhoneId(miv.to)}` : `From: ${formatPhoneId(miv.from)}`}
+                  {miv.from === deskId ? `To: ${getDisplayName(miv.to)}` : `From: ${getDisplayName(miv.from)}`}
                 </span>
                 <span className="basket-separator">•</span>
                 <span className="basket-date">{formatDate(miv.created_at)}</span>

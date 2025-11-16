@@ -1,5 +1,6 @@
-import React from 'react';
-import { ConversationWithLatest } from '../types';
+import React, { useState, useEffect } from 'react';
+import { ConversationWithLatest, Contact } from '../types';
+import * as api from '../api/client';
 import './ConversationList.css';
 
 interface ConversationListProps {
@@ -15,6 +16,21 @@ function ConversationList({
   onConversationClick,
   currentDeskId 
 }: ConversationListProps) {
+  const [contacts, setContacts] = useState<Contact[]>([]);
+
+  useEffect(() => {
+    const loadContactsData = async () => {
+      if (!currentDeskId) return;
+      try {
+        const response = await api.listContacts(currentDeskId);
+        setContacts(response.contacts);
+      } catch (err) {
+        console.error('Failed to load contacts:', err);
+      }
+    };
+    
+    loadContactsData();
+  }, [currentDeskId]);
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -43,11 +59,13 @@ function ConversationList({
     if (!conv.latest_miv || !currentDeskId) return 'Unknown';
     
     // If the latest miv is from us, the partner is the recipient
-    if (conv.latest_miv.from === currentDeskId) {
-      return formatPhoneId(conv.latest_miv.to);
-    }
-    // Otherwise, the partner is the sender
-    return formatPhoneId(conv.latest_miv.from);
+    const partnerDeskId = conv.latest_miv.from === currentDeskId 
+      ? conv.latest_miv.to 
+      : conv.latest_miv.from;
+    
+    // Check if we have a contact for this desk ID
+    const contact = contacts.find(c => c.desk_id_ref === partnerDeskId);
+    return contact ? contact.name : formatPhoneId(partnerDeskId);
   };
 
   if (!conversations || conversations.length === 0) {
