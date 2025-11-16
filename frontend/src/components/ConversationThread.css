@@ -155,3 +155,66 @@
   background: #e9ecef;
   border-color: #adb5bd;
 }
+
+.reply-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.reply-buttons .btn-reply {
+  flex: 1;
+}
+
+.btn-ack {
+  padding: 12px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  color: #856404;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ack:hover {
+  background: #ffe69c;
+  border-color: #ffb300;
+}
+
+.ack-confirm {
+  padding: 16px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+}
+
+.ack-confirm p {
+  margin: 0 0 12px 0;
+  color: #856404;
+  font-weight: 500;
+}
+
+.ack-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.archived-badge {
+  color: #6c757d;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.message-body em {
+  color: #6c757d;
+  font-style: italic;
+}
