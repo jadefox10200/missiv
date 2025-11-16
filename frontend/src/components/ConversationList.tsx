@@ -32,7 +32,7 @@ function ConversationList({
   if (!conversations || conversations.length === 0) {
     return (
       <div className="conversation-list">
-        <div className="conversation-header">
+        <div className="conversation-list-header">
           <h2>Conversations</h2>
           <p className="conversation-description">All your conversation threads</p>
           <div className="conversation-count">0 conversations</div>
@@ -47,7 +47,7 @@ function ConversationList({
 
   return (
     <div className="conversation-list">
-      <div className="conversation-header">
+      <div className="conversation-list-header">
         <h2>Conversations</h2>
         <p className="conversation-description">All your conversation threads</p>
         <div className="conversation-count">{conversations.length} {conversations.length === 1 ? 'conversation' : 'conversations'}</div>
@@ -62,7 +62,7 @@ function ConversationList({
             } ${conv.unread_count > 0 ? 'unread' : ''}`}
             onClick={() => onConversationClick(conv)}
           >
-            <div className="conversation-header">
+            <div className="conversation-item-header">
               <div className="conversation-subject">{conv.conversation.subject}</div>
               <div className="conversation-time">
                 {formatDate(conv.conversation.updated_at)}
