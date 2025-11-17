@@ -162,24 +162,15 @@ function App() {
         const fullConv = await api.getConversation(conv.conversation.id);
         
         for (const miv of fullConv.mivs) {
-          // Inbox: unread received messages
-          if (miv.to === deskId && !miv.read_at && !conv.conversation.is_archived) {
-            inboxCount++;
-          }
-          
-          // Pending: read but not replied messages (exclude answered)
-          if (miv.to === deskId && miv.read_at && !conv.conversation.is_archived) {
-            const hasReply = fullConv.mivs.some(
-              laterMiv => laterMiv.from === deskId && laterMiv.seq_no > miv.seq_no
-            );
-            if (!hasReply) {
+          // Count based on miv state from backend
+          if (!conv.conversation.is_archived) {
+            if (miv.state === 'IN') {
+              inboxCount++;
+            } else if (miv.state === 'PENDING') {
               pendingCount++;
+            } else if (miv.state === 'SENT') {
+              sentCount++;
             }
-          }
-          
-          // Sent: messages from this desk
-          if (miv.from === deskId && !conv.conversation.is_archived) {
-            sentCount++;
           }
           
           // Archived: all messages in archived conversations

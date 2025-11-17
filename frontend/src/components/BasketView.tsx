@@ -49,32 +49,8 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
             const fullConv = await api.getConversation(conv.conversation.id);
             const mivArray = fullConv.mivs || [];
             const filteredMivs = mivArray.filter(miv => {
-              // Filter based on selected basket and desk perspective
-              if (selectedBasket === 'IN') {
-                // Unread received messages
-                return miv.to === deskId && !miv.read_at;
-              } else if (selectedBasket === 'PENDING') {
-                // Read but not replied messages - exclude if there's a reply from this desk after it
-                if (miv.to !== deskId || !miv.read_at) {
-                  return false;
-                }
-                // Check if there's any miv from this desk with a higher seq_no (meaning we replied)
-                const hasReply = mivArray.some(
-                  laterMiv => laterMiv.from === deskId && laterMiv.seq_no > miv.seq_no
-                );
-                return !hasReply; // Only include if not answered
-              } else if (selectedBasket === 'SENT') {
-                // Sent messages without replies - only show unanswered
-                if (miv.from !== deskId) {
-                  return false;
-                }
-                // Check if there's any reply from the recipient with a higher seq_no
-                const hasReply = mivArray.some(
-                  laterMiv => laterMiv.from !== deskId && laterMiv.seq_no > miv.seq_no
-                );
-                return !hasReply; // Only include if not answered
-              }
-              return false;
+              // Filter based on miv state from backend
+              return miv.state === selectedBasket;
             });
             allMivs.push(...filteredMivs);
           }
@@ -230,31 +206,21 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
               className={`basket-item ${selectedMivId === miv.id ? 'selected' : ''}`}
               onClick={() => onMivClick(miv)}
             >
-              {/* Format varies by basket type */}
+              {/* Two-row layout: FROM and SUBJECT on first row, DATE/TIME and read/unread icons on second row */}
               <div className="basket-item-row">
-                {selectedBasket === 'SENT' ? (
-                  <>
-                    <span className="basket-from">
-                      To: {getDisplayName(miv.to)}
-                    </span>
-                    <span className="basket-subject">{miv.subject}</span>
-                    <span className="basket-date">{formatDate(miv.created_at)}</span>
-                    <div className="basket-meta">
-                      <span className="basket-seq">#{miv.seq_no}</span>
-                      <span className={miv.read_at ? 'basket-read' : 'basket-unread'}>
-                        {miv.read_at ? '✓ Read' : '○ Unread'}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="basket-from">
-                      {miv.from === deskId ? `To: ${getDisplayName(miv.to)}` : `From: ${getDisplayName(miv.from)}`}
-                    </span>
-                    <span className="basket-date">{formatDate(miv.created_at)}</span>
-                    <span className="basket-subject">{miv.subject}</span>
-                  </>
-                )}
+                <div className="basket-item-first-row">
+                  <span className="basket-from">
+                    {miv.from === deskId ? `To: ${getDisplayName(miv.to)}` : `From: ${getDisplayName(miv.from)}`}
+                  </span>
+                  <span className="basket-subject">{miv.subject}</span>
+                </div>
+                <div className="basket-item-second-row">
+                  <span className="basket-date">{formatDate(miv.created_at)}</span>
+                  <span className={miv.read_at ? 'basket-read' : 'basket-unread'}>
+                    {miv.read_at ? '✓ Read' : '○ Unread'}
+                  </span>
+                  <span className="basket-seq">#{miv.seq_no}</span>
+                </div>
               </div>
             </div>
           ))
