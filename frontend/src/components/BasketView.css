@@ -50,6 +50,7 @@
   margin-bottom: 1px;
   cursor: pointer;
   transition: all 0.2s;
+  min-height: 60px;
 }
 
 .basket-item:hover {
@@ -65,9 +66,21 @@
 
 .basket-item-row {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.basket-item-first-row {
+  display: flex;
   align-items: center;
   gap: 16px;
-  font-size: 14px;
+}
+
+.basket-item-second-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .basket-from {
