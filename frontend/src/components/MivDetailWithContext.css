@@ -338,6 +338,55 @@
   background: #c82333;
 }
 
+.btn-forget {
+  padding: 10px 20px;
+  background: #f8f9fa;
+  border: 1px solid #6c757d;
+  color: #495057;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn-forget:hover {
+  background: #e2e6ea;
+  border-color: #545b62;
+  color: #1e2125;
+}
+
+.forget-confirm {
+  padding: 20px;
+  background: #f8f9fa;
+  border: 1px solid #6c757d;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.forget-confirm p {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.forget-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.forgotten-label {
+  display: inline-block;
+  padding: 10px 15px;
+  background: #e2e6ea;
+  color: #495057;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  font-style: italic;
+}
+
 .miv-body em {
   color: #6c757d;
   font-style: italic;
