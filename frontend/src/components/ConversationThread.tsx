@@ -19,7 +19,7 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
     const loadContactsData = async () => {
       try {
         const response = await api.listContacts(currentDeskId);
-        setContacts(response.contacts);
+        setContacts(response.contacts || []);
       } catch (err) {
         console.error('Failed to load contacts:', err);
       }

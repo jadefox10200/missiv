@@ -30,9 +30,10 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
           api.listContacts(currentDeskId)
         ]);
         setConversation(convResponse);
-        setContacts(contactsResponse.contacts);
+        setContacts(contactsResponse.contacts || []);
         // Find the current miv in the conversation
-        const currentMiv = convResponse.mivs.find(m => m.id === miv.id) || miv;
+        const mivArray = convResponse.mivs || [];
+        const currentMiv = mivArray.find(m => m.id === miv.id) || miv;
         setSelectedMiv(currentMiv);
       } catch (err) {
         console.error('Failed to load data:', err);
@@ -56,7 +57,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
     const optimisticMiv: ConversationMiv = {
       id: `temp-${Date.now()}`,
       conversation_id: selectedMiv.conversation_id,
-      seq_no: conversation ? conversation.mivs.length + 1 : 1,
+      seq_no: conversation ? (conversation.mivs || []).length + 1 : 1,
       from: currentDeskId,
       to: selectedMiv.from === currentDeskId ? selectedMiv.to : selectedMiv.from,
       subject: selectedMiv.subject,
@@ -69,9 +70,10 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
 
     // Update conversation immediately
     if (conversation) {
+      const currentMivs = conversation.mivs || [];
       setConversation({
         ...conversation,
-        mivs: [...conversation.mivs, optimisticMiv]
+        mivs: [...currentMivs, optimisticMiv]
       });
     }
 
@@ -88,9 +90,10 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
       console.error('Failed to send reply:', err);
       // Revert optimistic update on error
       if (conversation) {
+        const currentMivs = conversation.mivs || [];
         setConversation({
           ...conversation,
-          mivs: conversation.mivs.filter(m => m.id !== optimisticMiv.id)
+          mivs: currentMivs.filter(m => m.id !== optimisticMiv.id)
         });
       }
       alert('Failed to send reply. Please try again.');
@@ -102,7 +105,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
     const optimisticAck: ConversationMiv = {
       id: `temp-ack-${Date.now()}`,
       conversation_id: selectedMiv.conversation_id,
-      seq_no: conversation ? conversation.mivs.length + 1 : 1,
+      seq_no: conversation ? (conversation.mivs || []).length + 1 : 1,
       from: currentDeskId,
       to: selectedMiv.from === currentDeskId ? selectedMiv.to : selectedMiv.from,
       subject: selectedMiv.subject,
@@ -115,9 +118,10 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
 
     // Update conversation immediately
     if (conversation) {
+      const currentMivs = conversation.mivs || [];
       setConversation({
         ...conversation,
-        mivs: [...conversation.mivs, optimisticAck]
+        mivs: [...currentMivs, optimisticAck]
       });
     }
 
@@ -133,9 +137,10 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
       console.error('Failed to send ACK:', err);
       // Revert optimistic update on error
       if (conversation) {
+        const currentMivs = conversation.mivs || [];
         setConversation({
           ...conversation,
-          mivs: conversation.mivs.filter(m => m.id !== optimisticAck.id)
+          mivs: currentMivs.filter(m => m.id !== optimisticAck.id)
         });
       }
       alert('Failed to send ACK. Please try again.');
@@ -182,7 +187,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
       
       // Reload contacts
       const contactsResponse = await api.listContacts(currentDeskId);
-      setContacts(contactsResponse.contacts);
+      setContacts(contactsResponse.contacts || []);
       
       // Close modal
       setShowAddContactModal(false);
@@ -214,10 +219,10 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
       <div className="thread-context">
         <div className="thread-header">
           <h3>Conversation Thread</h3>
-          <span className="thread-count">{conversation.mivs.length} messages</span>
+          <span className="thread-count">{(conversation.mivs || []).length} messages</span>
         </div>
         <div className="thread-icons">
-          {conversation.mivs.map((m, index) => (
+          {(conversation.mivs || []).map((m, index) => (
             <div
               key={m.id}
               className={`thread-icon ${m.id === selectedMiv.id ? 'active' : ''} ${

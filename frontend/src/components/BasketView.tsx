@@ -22,7 +22,7 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
       try {
         // Load contacts first
         const contactsResponse = await api.listContacts(deskId);
-        setContacts(contactsResponse.contacts);
+        setContacts(contactsResponse.contacts || []);
         
         // Get all conversations and extract mivs matching the selected basket state
         const response = await api.listConversations(deskId);
@@ -47,7 +47,8 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
             
             // Get full conversation to access all mivs
             const fullConv = await api.getConversation(conv.conversation.id);
-            const filteredMivs = fullConv.mivs.filter(miv => {
+            const mivArray = fullConv.mivs || [];
+            const filteredMivs = mivArray.filter(miv => {
               // Filter based on selected basket and desk perspective
               if (selectedBasket === 'IN') {
                 // Unread received messages
@@ -58,7 +59,7 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
                   return false;
                 }
                 // Check if there's any miv from this desk with a higher seq_no (meaning we replied)
-                const hasReply = fullConv.mivs.some(
+                const hasReply = mivArray.some(
                   laterMiv => laterMiv.from === deskId && laterMiv.seq_no > miv.seq_no
                 );
                 return !hasReply; // Only include if not answered
@@ -68,7 +69,7 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
                   return false;
                 }
                 // Check if there's any reply from the recipient with a higher seq_no
-                const hasReply = fullConv.mivs.some(
+                const hasReply = mivArray.some(
                   laterMiv => laterMiv.from !== deskId && laterMiv.seq_no > miv.seq_no
                 );
                 return !hasReply; // Only include if not answered
