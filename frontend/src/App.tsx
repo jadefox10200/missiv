@@ -159,7 +159,8 @@ function App() {
     
     for (const conv of convs) {
       try {
-        const fullConv = await api.getConversation(conv.conversation.id);
+        // Pass deskId to get miv states from user's perspective
+        const fullConv = await api.getConversation(conv.conversation.id, deskId);
         
         for (const miv of fullConv.mivs) {
           // Count based on miv state from backend

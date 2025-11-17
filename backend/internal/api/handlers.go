@@ -401,6 +401,9 @@ func (s *Server) getConversation(c *gin.Context) {
 					}
 					if !hasReply {
 						miv.State = models.StatePENDING
+					} else {
+						// Has reply - clear the state so it doesn't appear in baskets
+						miv.State = ""
 					}
 				}
 			} else if miv.From == deskID {
@@ -414,6 +417,9 @@ func (s *Server) getConversation(c *gin.Context) {
 				}
 				if !hasReply {
 					miv.State = models.StateSENT
+				} else {
+					// Has reply - clear the state so it doesn't appear in baskets
+					miv.State = ""
 				}
 			}
 		}
