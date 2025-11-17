@@ -234,22 +234,25 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
               <div className="basket-item-row">
                 {selectedBasket === 'SENT' ? (
                   <>
+                    <span className="basket-icon" title={miv.read_at ? 'Read' : 'Unread'}>
+                      {miv.read_at ? '✓' : '○'}
+                    </span>
                     <span className="basket-from">
                       To: {getDisplayName(miv.to)}
                     </span>
                     <span className="basket-subject">{miv.subject}</span>
                     <span className="basket-date">{formatDate(miv.created_at)}</span>
-                    <span className="basket-icon" title={miv.read_at ? 'Read' : 'Unread'}>
-                      {miv.read_at ? '✓' : '○'}
-                    </span>
                   </>
                 ) : (
                   <>
+                    <span className="basket-icon" title={miv.read_at ? 'Read' : 'Unread'}>
+                      {miv.read_at ? '✓' : '●'}
+                    </span>
                     <span className="basket-from">
                       {miv.from === deskId ? `To: ${getDisplayName(miv.to)}` : `From: ${getDisplayName(miv.from)}`}
                     </span>
-                    <span className="basket-date">{formatDate(miv.created_at)}</span>
                     <span className="basket-subject">{miv.subject}</span>
+                    <span className="basket-date">{formatDate(miv.created_at)}</span>
                   </>
                 )}
               </div>
