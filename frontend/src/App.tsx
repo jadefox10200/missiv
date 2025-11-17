@@ -307,6 +307,24 @@ function App() {
     }
   };
 
+  const handleMivForget = async () => {
+    if (!activeDesk) return;
+
+    try {
+      // Clear the selected miv immediately to remove it from view
+      setSelectedMiv(null);
+      
+      // Refresh conversations to update basket counts and lists
+      await refreshConversations();
+      
+      // Recalculate basket counts
+      const response = await api.listConversations(activeDesk.id);
+      await calculateBasketCounts(response.conversations, activeDesk.id);
+    } catch (err) {
+      console.error('Failed to forget miv:', err);
+    }
+  };
+
   const handleConversationClick = async (conv: ConversationWithLatest) => {
     try {
       // Pass desk_id to automatically mark messages as read
@@ -534,6 +552,7 @@ function App() {
                   miv={selectedMiv}
                   currentDeskId={activeDesk.id}
                   onReply={handleMivReply}
+                  onForget={handleMivForget}
                 />
               ) : (
                 <div className="empty-selection">

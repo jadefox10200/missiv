@@ -7,14 +7,16 @@ interface MivDetailWithContextProps {
   miv: ConversationMiv;
   currentDeskId: string;
   onReply: (body: string, isAck?: boolean) => void;
+  onForget?: () => void; // Callback when miv is forgotten
 }
 
-function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithContextProps) {
+function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDetailWithContextProps) {
   const [conversation, setConversation] = useState<GetConversationResponse | null>(null);
   const [selectedMiv, setSelectedMiv] = useState<ConversationMiv>(miv);
   const [replyBody, setReplyBody] = useState('');
   const [showReply, setShowReply] = useState(false);
   const [showAckConfirm, setShowAckConfirm] = useState(false);
+  const [showForgetConfirm, setShowForgetConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [showAddContactModal, setShowAddContactModal] = useState(false);
@@ -65,7 +67,8 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
       state: 'SENT' as any,
       created_at: new Date().toISOString(),
       is_encrypted: false,
-      is_ack: false
+      is_ack: false,
+      is_forgotten: false
     };
 
     // Update conversation immediately
@@ -113,7 +116,8 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
       state: 'SENT' as any,
       created_at: new Date().toISOString(),
       is_encrypted: false,
-      is_ack: true
+      is_ack: true,
+      is_forgotten: false
     };
 
     // Update conversation immediately
@@ -144,6 +148,21 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
         });
       }
       alert('Failed to send ACK. Please try again.');
+    }
+  };
+
+  const handleForget = async () => {
+    try {
+      await api.forgetMiv(selectedMiv.id);
+      setShowForgetConfirm(false);
+      // Call the callback to refresh the parent view
+      if (onForget) {
+        onForget();
+      }
+      alert('Message forgotten. It will no longer appear in your SENT basket.');
+    } catch (err) {
+      console.error('Failed to forget miv:', err);
+      alert('Failed to forget message. Please try again.');
     }
   };
 
@@ -296,7 +315,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
         </div>
 
         <div className="miv-actions">
-          {selectedMiv.to === currentDeskId && !showReply && !showAckConfirm && (
+          {selectedMiv.to === currentDeskId && !showReply && !showAckConfirm && !showForgetConfirm && (
             <>
               <button 
                 className="btn btn-primary" 
@@ -312,7 +331,39 @@ function MivDetailWithContext({ miv, currentDeskId, onReply }: MivDetailWithCont
               </button>
             </>
           )}
+          
+          {/* Add forget button for sent messages */}
+          {selectedMiv.from === currentDeskId && !selectedMiv.is_forgotten && selectedMiv.state === 'SENT' && !showForgetConfirm && (
+            <button 
+              className="btn btn-forget" 
+              onClick={() => setShowForgetConfirm(true)}
+              title="Stop tracking replies for this message"
+            >
+              Forget
+            </button>
+          )}
+          
+          {selectedMiv.is_forgotten && (
+            <span className="forgotten-label">This message has been forgotten</span>
+          )}
         </div>
+
+        {showForgetConfirm && (
+          <div className="forget-confirm">
+            <p>Are you sure you want to forget this message? It will be removed from your SENT basket and you will no longer track replies to it.</p>
+            <div className="forget-actions">
+              <button onClick={handleForget} className="btn btn-danger">
+                Yes, Forget This Message
+              </button>
+              <button
+                onClick={() => setShowForgetConfirm(false)}
+                className="btn"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {showAckConfirm && (
           <div className="ack-confirm">
