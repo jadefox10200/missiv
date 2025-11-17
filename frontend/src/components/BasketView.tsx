@@ -239,9 +239,12 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
                     </span>
                     <span className="basket-subject">{miv.subject}</span>
                     <span className="basket-date">{formatDate(miv.created_at)}</span>
-                    <span className="basket-icon" title={miv.read_at ? 'Read' : 'Unread'}>
-                      {miv.read_at ? '✓' : '○'}
-                    </span>
+                    <div className="basket-meta">
+                      <span className="basket-seq">#{miv.seq_no}</span>
+                      <span className={miv.read_at ? 'basket-read' : 'basket-unread'}>
+                        {miv.read_at ? '✓ Read' : '○ Unread'}
+                      </span>
+                    </div>
                   </>
                 ) : (
                   <>
