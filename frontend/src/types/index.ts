@@ -113,6 +113,7 @@ export interface ConversationMiv {
   read_at?: string;
   is_encrypted: boolean;
   is_ack: boolean;
+  is_forgotten: boolean;
 }
 
 export interface CreateConversationRequest {

@@ -29,6 +29,7 @@ type ConversationMiv struct {
 	ReadAt         *time.Time `json:"read_at,omitempty"`     // When the miv was read
 	IsEncrypted    bool       `json:"is_encrypted"`          // Whether the body is encrypted
 	IsAck          bool       `json:"is_ack"`                // Whether this is an ACK message
+	IsForgotten    bool       `json:"is_forgotten"`          // Whether this miv has been forgotten (stops tracking replies)
 }
 
 // CreateConversationRequest represents a request to create a new conversation

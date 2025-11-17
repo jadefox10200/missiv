@@ -379,7 +379,7 @@ func (s *Server) getConversation(c *gin.Context) {
 
 	// If desk_id is provided, adjust miv states based on desk perspective
 	if deskID != "" {
-		// Adjust states from the perspective of the querying desk BEFORE marking as read
+		// Adjust states from the perspective of the querying desk
 		for _, miv := range mivs {
 			if miv.To == deskID {
 				// For incoming mivs
@@ -402,7 +402,7 @@ func (s *Server) getConversation(c *gin.Context) {
 					}
 				}
 			} else if miv.From == deskID {
-				// For outgoing mivs, check if there's a reply
+				// For outgoing mivs, check if there's a reply or if it's forgotten
 				hasReply := false
 				for _, laterMiv := range mivs {
 					if laterMiv.From != deskID && laterMiv.SeqNo > miv.SeqNo {
@@ -410,19 +410,18 @@ func (s *Server) getConversation(c *gin.Context) {
 						break
 					}
 				}
-				if !hasReply {
+				// Only show in SENT basket if not forgotten and no reply
+				if !hasReply && !miv.IsForgotten {
 					miv.State = models.StateSENT
 				} else {
-					// Has reply - clear the state so it doesn't appear in baskets
+					// Has reply or is forgotten - clear the state so it doesn't appear in baskets
 					miv.State = ""
 				}
 			}
 		}
 		
-		// Then mark unread incoming mivs as read (for conversation thread view)
-		s.storage.MarkConversationMivsAsRead(id, deskID)
-		// Reload mivs to get updated read_at timestamps
-		mivs, _ = s.storage.GetConversationMivs(id)
+		// Note: Removed automatic marking as read when viewing conversation
+		// Mivs must be explicitly marked as read using the /mivs/:id/read endpoint
 	}
 
 	c.JSON(http.StatusOK, models.GetConversationResponse{
@@ -442,6 +441,13 @@ func (s *Server) createConversation(c *gin.Context) {
 	deskID := c.Query("desk_id")
 	if deskID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "desk_id is required"})
+		return
+	}
+
+	// Validate that recipient desk exists
+	_, err := s.storage.GetDesk(req.To)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Recipient desk '%s' does not exist. Please verify the desk number and try again.", req.To)})
 		return
 	}
 
@@ -666,6 +672,28 @@ func (s *Server) markMivAsRead(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, miv)
+}
+
+// Miv forget handler
+
+func (s *Server) forgetMiv(c *gin.Context) {
+	mivID := c.Param("id")
+
+	// Get the miv first to validate it exists
+	miv, err := s.storage.GetConversationMiv(mivID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Miv not found"})
+		return
+	}
+
+	// Mark the miv as forgotten
+	miv.IsForgotten = true
+	if err := s.storage.UpdateConversationMiv(miv); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to forget miv"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Miv forgotten successfully", "miv": miv})
 }
 
 // Contact handlers

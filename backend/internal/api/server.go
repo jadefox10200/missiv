@@ -65,6 +65,7 @@ func (s *Server) setupRoutes() {
 		
 		// Miv read endpoints
 		api.POST("/mivs/:id/read", s.markMivAsRead)
+		api.POST("/mivs/:id/forget", s.forgetMiv)
 		
 		// Notification endpoints
 		api.GET("/notifications", s.listNotifications)

@@ -235,7 +235,9 @@ export const createConversation = async (
     body: JSON.stringify(request),
   });
   if (!response.ok) {
-    throw new Error('Failed to create conversation');
+    // Try to parse error message from response
+    const errorData = await response.json().catch(() => ({ error: 'Failed to create conversation' }));
+    throw new Error(errorData.error || 'Failed to create conversation');
   }
   return response.json();
 };
@@ -267,6 +269,19 @@ export const markMivAsRead = async (mivId: string): Promise<void> => {
   });
   if (!response.ok) {
     throw new Error('Failed to mark miv as read');
+  }
+};
+
+// Forget miv (remove from SENT basket, stop tracking replies)
+export const forgetMiv = async (mivId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/mivs/${mivId}/forget`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to forget miv');
   }
 };
 
