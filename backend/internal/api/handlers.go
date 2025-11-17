@@ -379,12 +379,7 @@ func (s *Server) getConversation(c *gin.Context) {
 
 	// If desk_id is provided, adjust miv states based on desk perspective
 	if deskID != "" {
-		// First mark unread incoming mivs as read
-		s.storage.MarkConversationMivsAsRead(id, deskID)
-		// Reload mivs to get updated read_at timestamps
-		mivs, _ = s.storage.GetConversationMivs(id)
-		
-		// Adjust states from the perspective of the querying desk
+		// Adjust states from the perspective of the querying desk BEFORE marking as read
 		for _, miv := range mivs {
 			if miv.To == deskID {
 				// For incoming mivs
@@ -401,6 +396,9 @@ func (s *Server) getConversation(c *gin.Context) {
 					}
 					if !hasReply {
 						miv.State = models.StatePENDING
+					} else {
+						// Has reply - clear the state so it doesn't appear in baskets
+						miv.State = ""
 					}
 				}
 			} else if miv.From == deskID {
@@ -414,9 +412,17 @@ func (s *Server) getConversation(c *gin.Context) {
 				}
 				if !hasReply {
 					miv.State = models.StateSENT
+				} else {
+					// Has reply - clear the state so it doesn't appear in baskets
+					miv.State = ""
 				}
 			}
 		}
+		
+		// Then mark unread incoming mivs as read (for conversation thread view)
+		s.storage.MarkConversationMivsAsRead(id, deskID)
+		// Reload mivs to get updated read_at timestamps
+		mivs, _ = s.storage.GetConversationMivs(id)
 	}
 
 	c.JSON(http.StatusOK, models.GetConversationResponse{

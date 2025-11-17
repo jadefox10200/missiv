@@ -46,7 +46,8 @@ function BasketView({ deskId, selectedBasket, onMivClick, selectedMivId }: Baske
             }
             
             // Get full conversation to access all mivs
-            const fullConv = await api.getConversation(conv.conversation.id);
+            // Pass deskId to get miv states from user's perspective
+            const fullConv = await api.getConversation(conv.conversation.id, deskId);
             const mivArray = fullConv.mivs || [];
             const filteredMivs = mivArray.filter(miv => {
               // Filter based on miv state from backend
