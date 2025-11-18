@@ -16,6 +16,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
   const [replyBody, setReplyBody] = useState('');
   const [showReply, setShowReply] = useState(false);
   const [showAckConfirm, setShowAckConfirm] = useState(false);
+  const [ackBody, setAckBody] = useState('');
   const [showForgetConfirm, setShowForgetConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -104,6 +105,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
   };
 
   const handleAck = async () => {
+    const messageToSend = ackBody.trim() || 'ACK - Conversation ended';
     // Optimistically add ACK to local state
     const optimisticAck: ConversationMiv = {
       id: `temp-ack-${Date.now()}`,
@@ -112,7 +114,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
       from: currentDeskId,
       to: selectedMiv.from === currentDeskId ? selectedMiv.to : selectedMiv.from,
       subject: selectedMiv.subject,
-      body: btoa('ACK - Conversation ended'),
+      body: btoa(messageToSend),
       state: 'SENT' as any,
       created_at: new Date().toISOString(),
       is_encrypted: false,
@@ -130,10 +132,11 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
     }
 
     setShowAckConfirm(false);
+    setAckBody('');
 
     // Then sync with server in background
     try {
-      await onReply('ACK - Conversation ended', true);
+      await onReply(messageToSend, true);
       // Reload conversation to get the real data from server
       const updatedConv = await api.getConversation(selectedMiv.conversation_id);
       setConversation(updatedConv);
@@ -320,12 +323,14 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
               >
                 Reply
               </button>
-              <button 
-                className="btn btn-ack" 
-                onClick={() => setShowAckConfirm(true)}
-              >
-                Send ACK
-              </button>
+              {!selectedMiv.is_ack && (
+                <button 
+                  className="btn btn-ack" 
+                  onClick={() => setShowAckConfirm(true)}
+                >
+                  Send ACK
+                </button>
+              )}
             </>
           )}
           
@@ -364,13 +369,23 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
 
         {showAckConfirm && (
           <div className="ack-confirm">
+            <h3>Send Acknowledgment</h3>
             <p>Send an acknowledgment message? The recipient can reply to continue the conversation or delete it to end.</p>
+            <textarea
+              value={ackBody}
+              onChange={(e) => setAckBody(e.target.value)}
+              placeholder="Optional: Type your acknowledgment message..."
+              rows={3}
+            />
             <div className="ack-actions">
               <button onClick={handleAck} className="btn btn-danger">
                 Yes, Send ACK
               </button>
               <button
-                onClick={() => setShowAckConfirm(false)}
+                onClick={() => {
+                  setShowAckConfirm(false);
+                  setAckBody('');
+                }}
                 className="btn"
               >
                 Cancel
@@ -393,16 +408,18 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
               <button type="submit" className="btn btn-primary">
                 Send Reply
               </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={() => {
-                  setShowReply(false);
-                  setShowAckConfirm(true);
-                }}
-              >
-                Send ACK
-              </button>
+              {!selectedMiv.is_ack && (
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => {
+                    setShowReply(false);
+                    setShowAckConfirm(true);
+                  }}
+                >
+                  Send ACK
+                </button>
+              )}
               <button 
                 type="button" 
                 className="btn btn-secondary" 
