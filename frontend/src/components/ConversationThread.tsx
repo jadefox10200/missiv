@@ -13,6 +13,7 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
   const [replyBody, setReplyBody] = useState('');
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showAckConfirm, setShowAckConfirm] = useState(false);
+  const [ackBody, setAckBody] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
 
   useEffect(() => {
@@ -38,8 +39,10 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
   };
 
   const handleAck = () => {
-    onReply('ACK - Conversation ended', true);
+    const messageToSend = ackBody.trim() || 'ACK - Conversation ended';
+    onReply(messageToSend, true);
     setShowAckConfirm(false);
+    setAckBody('');
   };
 
   // Ping-pong style: only show reply buttons if latest miv is to us and unanswered
@@ -53,6 +56,9 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
     
     // Don't show if archived
     if (conversation.conversation.is_archived) return false;
+    
+    // Don't show if latest miv is an ACK (no ACKing ACKs)
+    if (latestMiv.is_ack) return false;
     
     return true;
   };
@@ -146,13 +152,23 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
           <>
             {showAckConfirm ? (
               <div className="ack-confirm">
+                <h3>Send Acknowledgment</h3>
                 <p>Send an acknowledgment message? The recipient can reply to continue the conversation or delete it to end.</p>
+                <textarea
+                  value={ackBody}
+                  onChange={(e) => setAckBody(e.target.value)}
+                  placeholder="Optional: Type your acknowledgment message..."
+                  rows={3}
+                />
                 <div className="ack-actions">
                   <button onClick={handleAck} className="btn btn-danger">
                     Yes, Send ACK
                   </button>
                   <button
-                    onClick={() => setShowAckConfirm(false)}
+                    onClick={() => {
+                      setShowAckConfirm(false);
+                      setAckBody('');
+                    }}
                     className="btn"
                   >
                     Cancel
