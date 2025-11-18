@@ -34,13 +34,13 @@ func (s *Server) registerAccount(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash security answers"})
 		return
 	}
-	
+
 	firstPetHash, err := crypto.HashPassword(req.FirstPetName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash security answers"})
 		return
 	}
-	
+
 	motherMaidenHash, err := crypto.HashPassword(req.MotherMaiden)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash security answers"})
@@ -165,13 +165,13 @@ func (s *Server) recoverPassword(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials or security answers"})
 		return
 	}
-	
+
 	validPetName, err := crypto.VerifyPassword(req.FirstPetName, account.FirstPetNameHash)
 	if err != nil || !validPetName {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials or security answers"})
 		return
 	}
-	
+
 	validMaiden, err := crypto.VerifyPassword(req.MotherMaiden, account.MotherMaidenHash)
 	if err != nil || !validMaiden {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials or security answers"})
@@ -419,7 +419,7 @@ func (s *Server) getConversation(c *gin.Context) {
 				}
 			}
 		}
-		
+
 		// Note: Removed automatic marking as read when viewing conversation
 		// Mivs must be explicitly marked as read using the /mivs/:id/read endpoint
 	}
@@ -498,7 +498,7 @@ func (s *Server) createConversation(c *gin.Context) {
 
 func (s *Server) replyToConversation(c *gin.Context) {
 	conversationID := c.Param("id")
-	
+
 	var req models.ReplyToConversationRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -573,7 +573,7 @@ func (s *Server) replyToConversation(c *gin.Context) {
 	if req.IsAck {
 		message = fmt.Sprintf("ACK from %s in: %s", deskID, conv.Subject)
 	}
-	
+
 	notification := &models.Notification{
 		DeskID:         recipientID,
 		Type:           notifType,
@@ -716,87 +716,87 @@ func (s *Server) forgetMiv(c *gin.Context) {
 
 func (s *Server) createContact(c *gin.Context) {
 	deskID := c.Param("desk_id")
-	
+
 	var req models.CreateContactRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Verify desk exists
 	_, err := s.storage.GetDesk(deskID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Desk not found"})
 		return
 	}
-	
+
 	contact := &models.Contact{
 		DeskID:    deskID,
 		Name:      req.Name,
 		DeskIDRef: req.DeskIDRef,
 		Notes:     req.Notes,
 	}
-	
+
 	if err := s.storage.CreateContact(contact); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create contact"})
 		return
 	}
-	
+
 	c.JSON(http.StatusCreated, contact)
 }
 
 func (s *Server) listContacts(c *gin.Context) {
 	deskID := c.Param("desk_id")
-	
+
 	// Verify desk exists
 	_, err := s.storage.GetDesk(deskID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Desk not found"})
 		return
 	}
-	
+
 	contacts, err := s.storage.ListContactsForDesk(deskID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list contacts"})
 		return
 	}
-	
+
 	response := &models.ListContactsResponse{
 		Contacts: contacts,
 		Total:    len(contacts),
 	}
-	
+
 	c.JSON(http.StatusOK, response)
 }
 
 func (s *Server) getContact(c *gin.Context) {
 	contactID := c.Param("contact_id")
-	
+
 	contact, err := s.storage.GetContact(contactID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Contact not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, contact)
 }
 
 func (s *Server) updateContact(c *gin.Context) {
 	contactID := c.Param("contact_id")
-	
+
 	var req models.UpdateContactRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Get existing contact
 	existing, err := s.storage.GetContact(contactID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Contact not found"})
 		return
 	}
-	
+
 	// Update fields
 	if req.Name != "" {
 		existing.Name = req.Name
@@ -805,22 +805,22 @@ func (s *Server) updateContact(c *gin.Context) {
 		existing.DeskIDRef = req.DeskIDRef
 	}
 	existing.Notes = req.Notes
-	
+
 	if err := s.storage.UpdateContact(existing); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update contact"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, existing)
 }
 
 func (s *Server) deleteContact(c *gin.Context) {
 	contactID := c.Param("contact_id")
-	
+
 	if err := s.storage.DeleteContact(contactID); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Contact not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusNoContent, nil)
 }

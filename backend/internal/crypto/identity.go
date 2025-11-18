@@ -12,14 +12,14 @@ func GeneratePhoneStyleID() (string, error) {
 	// Generate a 10-digit number
 	// First digit: 2-9 (avoid 0 and 1)
 	// Remaining digits: 0-9
-	
+
 	firstDigit, err := rand.Int(rand.Reader, big.NewInt(8))
 	if err != nil {
 		return "", fmt.Errorf("failed to generate first digit: %w", err)
 	}
-	
+
 	id := fmt.Sprintf("%d", firstDigit.Int64()+2)
-	
+
 	for i := 0; i < 9; i++ {
 		digit, err := rand.Int(rand.Reader, big.NewInt(10))
 		if err != nil {
@@ -27,7 +27,7 @@ func GeneratePhoneStyleID() (string, error) {
 		}
 		id += fmt.Sprintf("%d", digit.Int64())
 	}
-	
+
 	return id, nil
 }
 
