@@ -18,6 +18,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
   const [showAckConfirm, setShowAckConfirm] = useState(false);
   const [ackBody, setAckBody] = useState('');
   const [showForgetConfirm, setShowForgetConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [showAddContactModal, setShowAddContactModal] = useState(false);
@@ -169,6 +170,21 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      await api.archiveConversation(selectedMiv.conversation_id);
+      setShowDeleteConfirm(false);
+      // Call the callback to refresh the parent view
+      if (onForget) {
+        onForget();
+      }
+      alert('Conversation archived successfully.');
+    } catch (err) {
+      console.error('Failed to archive conversation:', err);
+      alert('Failed to archive conversation. Please try again.');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString('en-US', {
@@ -315,21 +331,40 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
         </div>
 
         <div className="miv-actions">
-          {selectedMiv.to === currentDeskId && !showReply && !showAckConfirm && !showForgetConfirm && (
+          {selectedMiv.to === currentDeskId && !showReply && !showAckConfirm && !showForgetConfirm && !showDeleteConfirm && (
             <>
-              <button 
-                className="btn btn-primary" 
-                onClick={() => setShowReply(true)}
-              >
-                Reply
-              </button>
-              {!selectedMiv.is_ack && (
-                <button 
-                  className="btn btn-ack" 
-                  onClick={() => setShowAckConfirm(true)}
-                >
-                  Send ACK
-                </button>
+              {selectedMiv.is_ack ? (
+                // For ACK mivs, show "Answer" and "Delete" buttons
+                <>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => setShowReply(true)}
+                  >
+                    Answer
+                  </button>
+                  <button 
+                    className="btn btn-danger" 
+                    onClick={() => setShowDeleteConfirm(true)}
+                  >
+                    Delete
+                  </button>
+                </>
+              ) : (
+                // For non-ACK mivs, show "Reply" and "Send ACK" buttons
+                <>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => setShowReply(true)}
+                  >
+                    Reply
+                  </button>
+                  <button 
+                    className="btn btn-ack" 
+                    onClick={() => setShowAckConfirm(true)}
+                  >
+                    Send ACK
+                  </button>
+                </>
               )}
             </>
           )}
@@ -359,6 +394,23 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
               </button>
               <button
                 onClick={() => setShowForgetConfirm(false)}
+                className="btn"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showDeleteConfirm && (
+          <div className="delete-confirm">
+            <p>Are you sure you want to delete this conversation? The conversation will be archived and removed from your inbox.</p>
+            <div className="delete-actions">
+              <button onClick={handleDelete} className="btn btn-danger">
+                Yes, Archive This Conversation
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
                 className="btn"
               >
                 Cancel

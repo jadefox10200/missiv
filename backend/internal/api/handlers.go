@@ -587,6 +587,26 @@ func (s *Server) replyToConversation(c *gin.Context) {
 	c.JSON(http.StatusCreated, miv)
 }
 
+func (s *Server) archiveConversation(c *gin.Context) {
+	conversationID := c.Param("id")
+
+	// Get conversation
+	conv, err := s.storage.GetConversation(conversationID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Conversation not found"})
+		return
+	}
+
+	// Archive the conversation
+	conv.IsArchived = true
+	if err := s.storage.UpdateConversation(conv); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to archive conversation"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Conversation archived successfully", "conversation": conv})
+}
+
 // Notification handlers
 
 func (s *Server) listNotifications(c *gin.Context) {

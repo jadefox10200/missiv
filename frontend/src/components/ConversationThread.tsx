@@ -7,12 +7,14 @@ interface ConversationThreadProps {
   conversation: GetConversationResponse;
   currentDeskId: string;
   onReply: (body: string, isAck?: boolean) => void;
+  onArchive?: () => void;
 }
 
-function ConversationThread({ conversation, currentDeskId, onReply }: ConversationThreadProps) {
+function ConversationThread({ conversation, currentDeskId, onReply, onArchive }: ConversationThreadProps) {
   const [replyBody, setReplyBody] = useState('');
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showAckConfirm, setShowAckConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [ackBody, setAckBody] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
 
@@ -45,6 +47,19 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
     setAckBody('');
   };
 
+  const handleDelete = async () => {
+    try {
+      await api.archiveConversation(conversation.conversation.id);
+      setShowDeleteConfirm(false);
+      if (onArchive) {
+        onArchive();
+      }
+    } catch (err) {
+      console.error('Failed to archive conversation:', err);
+      alert('Failed to archive conversation. Please try again.');
+    }
+  };
+
   // Ping-pong style: only show reply buttons if latest miv is to us and unanswered
   const shouldShowReplyButtons = () => {
     if (!conversation || conversation.mivs.length === 0) return false;
@@ -57,10 +72,13 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
     // Don't show if archived
     if (conversation.conversation.is_archived) return false;
     
-    // Don't show if latest miv is an ACK (no ACKing ACKs)
-    if (latestMiv.is_ack) return false;
-    
     return true;
+  };
+
+  const isLatestMivAck = () => {
+    if (!conversation || conversation.mivs.length === 0) return false;
+    const latestMiv = conversation.mivs[conversation.mivs.length - 1];
+    return latestMiv.is_ack;
   };
 
   const formatDate = (dateString: string) => {
@@ -150,7 +168,23 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
       <div className="conversation-reply">
         {shouldShowReplyButtons() && (
           <>
-            {showAckConfirm ? (
+            {showDeleteConfirm ? (
+              <div className="delete-confirm">
+                <h3>Archive Conversation</h3>
+                <p>Are you sure you want to archive this conversation? It will be removed from your inbox.</p>
+                <div className="delete-actions">
+                  <button onClick={handleDelete} className="btn btn-danger">
+                    Yes, Archive
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="btn"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : showAckConfirm ? (
               <div className="ack-confirm">
                 <h3>Send Acknowledgment</h3>
                 <p>Send an acknowledgment message? The recipient can reply to continue the conversation or delete it to end.</p>
@@ -188,16 +222,18 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
                   <button type="submit" className="btn btn-primary">
                     Send Reply
                   </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={() => {
-                      setShowReplyForm(false);
-                      setShowAckConfirm(true);
-                    }}
-                  >
-                    Send ACK
-                  </button>
+                  {!isLatestMivAck() && (
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={() => {
+                        setShowReplyForm(false);
+                        setShowAckConfirm(true);
+                      }}
+                    >
+                      Send ACK
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn"
@@ -212,18 +248,39 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
               </form>
             ) : (
               <div className="reply-buttons">
-                <button
-                  className="btn btn-reply"
-                  onClick={() => setShowReplyForm(true)}
-                >
-                  Reply to conversation
-                </button>
-                <button
-                  className="btn btn-ack"
-                  onClick={() => setShowAckConfirm(true)}
-                >
-                  Send ACK
-                </button>
+                {isLatestMivAck() ? (
+                  // For ACK mivs, show "Answer" and "Delete" buttons
+                  <>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => setShowReplyForm(true)}
+                    >
+                      Answer
+                    </button>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => setShowDeleteConfirm(true)}
+                    >
+                      Delete
+                    </button>
+                  </>
+                ) : (
+                  // For non-ACK mivs, show "Reply" and "Send ACK" buttons
+                  <>
+                    <button
+                      className="btn btn-reply"
+                      onClick={() => setShowReplyForm(true)}
+                    >
+                      Reply to conversation
+                    </button>
+                    <button
+                      className="btn btn-ack"
+                      onClick={() => setShowAckConfirm(true)}
+                    >
+                      Send ACK
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </>

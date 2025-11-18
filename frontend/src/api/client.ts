@@ -259,6 +259,19 @@ export const replyToConversation = async (
   }
 };
 
+// Archive conversation
+export const archiveConversation = async (conversationId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}/archive`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to archive conversation');
+  }
+};
+
 // Mark miv as read
 export const markMivAsRead = async (mivId: string): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/mivs/${mivId}/read`, {

@@ -62,6 +62,7 @@ func (s *Server) setupRoutes() {
 		api.GET("/conversations/:id", s.getConversation)
 		api.POST("/conversations", s.createConversation)
 		api.POST("/conversations/:id/reply", s.replyToConversation)
+		api.POST("/conversations/:id/archive", s.archiveConversation)
 		
 		// Miv read endpoints
 		api.POST("/mivs/:id/read", s.markMivAsRead)
