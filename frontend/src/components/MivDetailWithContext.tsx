@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { ConversationMiv, GetConversationResponse, Contact } from '../types';
-import * as api from '../api/client';
-import './MivDetailWithContext.css';
+import React, { useState, useEffect } from "react";
+import { ConversationMiv, GetConversationResponse, Contact } from "../types";
+import * as api from "../api/client";
+import "./MivDetailWithContext.css";
 
 interface MivDetailWithContextProps {
   miv: ConversationMiv;
@@ -10,20 +10,26 @@ interface MivDetailWithContextProps {
   onForget?: () => void; // Callback when miv is forgotten
 }
 
-function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDetailWithContextProps) {
-  const [conversation, setConversation] = useState<GetConversationResponse | null>(null);
+function MivDetailWithContext({
+  miv,
+  currentDeskId,
+  onReply,
+  onForget,
+}: MivDetailWithContextProps) {
+  const [conversation, setConversation] =
+    useState<GetConversationResponse | null>(null);
   const [selectedMiv, setSelectedMiv] = useState<ConversationMiv>(miv);
-  const [replyBody, setReplyBody] = useState('');
+  const [replyBody, setReplyBody] = useState("");
   const [showReply, setShowReply] = useState(false);
   const [showAckConfirm, setShowAckConfirm] = useState(false);
-  const [ackBody, setAckBody] = useState('');
+  const [ackBody, setAckBody] = useState("");
   const [showForgetConfirm, setShowForgetConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [showAddContactModal, setShowAddContactModal] = useState(false);
-  const [newContactName, setNewContactName] = useState('');
-  const [newContactDeskId, setNewContactDeskId] = useState('');
+  const [newContactName, setNewContactName] = useState("");
+  const [newContactDeskId, setNewContactDeskId] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
@@ -31,16 +37,16 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
       try {
         const [convResponse, contactsResponse] = await Promise.all([
           api.getConversation(miv.conversation_id),
-          api.listContacts(currentDeskId)
+          api.listContacts(currentDeskId),
         ]);
         setConversation(convResponse);
         setContacts(contactsResponse.contacts || []);
         // Find the current miv in the conversation
         const mivArray = convResponse.mivs || [];
-        const currentMiv = mivArray.find(m => m.id === miv.id) || miv;
+        const currentMiv = mivArray.find((m) => m.id === miv.id) || miv;
         setSelectedMiv(currentMiv);
       } catch (err) {
-        console.error('Failed to load data:', err);
+        console.error("Failed to load data:", err);
       } finally {
         setLoading(false);
       }
@@ -63,14 +69,15 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
       conversation_id: selectedMiv.conversation_id,
       seq_no: conversation ? (conversation.mivs || []).length + 1 : 1,
       from: currentDeskId,
-      to: selectedMiv.from === currentDeskId ? selectedMiv.to : selectedMiv.from,
+      to:
+        selectedMiv.from === currentDeskId ? selectedMiv.to : selectedMiv.from,
       subject: selectedMiv.subject,
       body: btoa(replyBody),
-      state: 'SENT' as any,
+      state: "SENT" as any,
       created_at: new Date().toISOString(),
       is_encrypted: false,
       is_ack: false,
-      is_forgotten: false
+      is_forgotten: false,
     };
 
     // Update conversation immediately
@@ -78,49 +85,52 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
       const currentMivs = conversation.mivs || [];
       setConversation({
         ...conversation,
-        mivs: [...currentMivs, optimisticMiv]
+        mivs: [...currentMivs, optimisticMiv],
       });
     }
 
-    setReplyBody('');
+    setReplyBody("");
     setShowReply(false);
 
     // Then sync with server in background
     try {
       await onReply(replyBody, false);
       // Reload conversation to get the real data from server
-      const updatedConv = await api.getConversation(selectedMiv.conversation_id);
+      const updatedConv = await api.getConversation(
+        selectedMiv.conversation_id
+      );
       setConversation(updatedConv);
     } catch (err) {
-      console.error('Failed to send reply:', err);
+      console.error("Failed to send reply:", err);
       // Revert optimistic update on error
       if (conversation) {
         const currentMivs = conversation.mivs || [];
         setConversation({
           ...conversation,
-          mivs: currentMivs.filter(m => m.id !== optimisticMiv.id)
+          mivs: currentMivs.filter((m) => m.id !== optimisticMiv.id),
         });
       }
-      alert('Failed to send reply. Please try again.');
+      alert("Failed to send reply. Please try again.");
     }
   };
 
   const handleAck = async () => {
-    const messageToSend = ackBody.trim() || 'ACK - Conversation ended';
+    const messageToSend = ackBody.trim() || "ACK - Conversation ended";
     // Optimistically add ACK to local state
     const optimisticAck: ConversationMiv = {
       id: `temp-ack-${Date.now()}`,
       conversation_id: selectedMiv.conversation_id,
       seq_no: conversation ? (conversation.mivs || []).length + 1 : 1,
       from: currentDeskId,
-      to: selectedMiv.from === currentDeskId ? selectedMiv.to : selectedMiv.from,
+      to:
+        selectedMiv.from === currentDeskId ? selectedMiv.to : selectedMiv.from,
       subject: selectedMiv.subject,
       body: btoa(messageToSend),
-      state: 'SENT' as any,
+      state: "SENT" as any,
       created_at: new Date().toISOString(),
       is_encrypted: false,
       is_ack: true,
-      is_forgotten: false
+      is_forgotten: false,
     };
 
     // Update conversation immediately
@@ -128,30 +138,32 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
       const currentMivs = conversation.mivs || [];
       setConversation({
         ...conversation,
-        mivs: [...currentMivs, optimisticAck]
+        mivs: [...currentMivs, optimisticAck],
       });
     }
 
     setShowAckConfirm(false);
-    setAckBody('');
+    setAckBody("");
 
     // Then sync with server in background
     try {
       await onReply(messageToSend, true);
       // Reload conversation to get the real data from server
-      const updatedConv = await api.getConversation(selectedMiv.conversation_id);
+      const updatedConv = await api.getConversation(
+        selectedMiv.conversation_id
+      );
       setConversation(updatedConv);
     } catch (err) {
-      console.error('Failed to send ACK:', err);
+      console.error("Failed to send ACK:", err);
       // Revert optimistic update on error
       if (conversation) {
         const currentMivs = conversation.mivs || [];
         setConversation({
           ...conversation,
-          mivs: currentMivs.filter(m => m.id !== optimisticAck.id)
+          mivs: currentMivs.filter((m) => m.id !== optimisticAck.id),
         });
       }
-      alert('Failed to send ACK. Please try again.');
+      alert("Failed to send ACK. Please try again.");
     }
   };
 
@@ -163,10 +175,10 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
       if (onForget) {
         onForget();
       }
-      alert('Message forgotten. It will no longer appear in your SENT basket.');
+      alert("Message forgotten. It will no longer appear in your SENT basket.");
     } catch (err) {
-      console.error('Failed to forget miv:', err);
-      alert('Failed to forget message. Please try again.');
+      console.error("Failed to forget miv:", err);
+      alert("Failed to forget message. Please try again.");
     }
   };
 
@@ -178,21 +190,21 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
       if (onForget) {
         onForget();
       }
-      alert('Conversation archived successfully.');
+      alert("Conversation archived successfully.");
     } catch (err) {
-      console.error('Failed to archive conversation:', err);
-      alert('Failed to archive conversation. Please try again.');
+      console.error("Failed to archive conversation:", err);
+      alert("Failed to archive conversation. Please try again.");
     }
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
     });
   };
 
@@ -204,12 +216,12 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
   };
 
   const getDisplayName = (deskIdRef: string) => {
-    const contact = contacts.find(c => c.desk_id_ref === deskIdRef);
+    const contact = contacts.find((c) => c.desk_id_ref === deskIdRef);
     return contact ? contact.name : formatPhoneId(deskIdRef);
   };
 
   const isContact = (deskIdRef: string) => {
-    return contacts.some(c => c.desk_id_ref === deskIdRef);
+    return contacts.some((c) => c.desk_id_ref === deskIdRef);
   };
 
   const handleAddContact = async (e: React.FormEvent) => {
@@ -220,26 +232,26 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
       await api.createContact(currentDeskId, {
         name: newContactName.trim(),
         desk_id_ref: newContactDeskId,
-        notes: ''
+        notes: "",
       });
-      
+
       // Reload contacts
       const contactsResponse = await api.listContacts(currentDeskId);
       setContacts(contactsResponse.contacts || []);
-      
+
       // Close modal
       setShowAddContactModal(false);
-      setNewContactName('');
-      setNewContactDeskId('');
+      setNewContactName("");
+      setNewContactDeskId("");
     } catch (err) {
-      console.error('Failed to add contact:', err);
-      alert('Failed to add contact. Please try again.');
+      console.error("Failed to add contact:", err);
+      alert("Failed to add contact. Please try again.");
     }
   };
 
   const openAddContactModal = (deskIdRef: string) => {
     setNewContactDeskId(deskIdRef);
-    setNewContactName('');
+    setNewContactName("");
     setShowAddContactModal(true);
   };
 
@@ -257,20 +269,26 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
       <div className="thread-context">
         <div className="thread-header">
           <h3>Conversation Thread</h3>
-          <span className="thread-count">{(conversation.mivs || []).length} messages</span>
+          <span className="thread-count">
+            {(conversation.mivs || []).length} messages
+          </span>
         </div>
         <div className="thread-icons">
           {(conversation.mivs || []).map((m, index) => (
             <div
               key={m.id}
-              className={`thread-icon ${m.id === selectedMiv.id ? 'active' : ''} ${
-                m.from === currentDeskId ? 'outgoing' : 'incoming'
-              }`}
+              className={`thread-icon ${
+                m.id === selectedMiv.id ? "active" : ""
+              } ${m.from === currentDeskId ? "outgoing" : "incoming"}`}
               onClick={() => handleMivClick(m)}
-              title={`Message #${m.seq_no} - ${m.from === currentDeskId ? 'You' : formatPhoneId(m.from)}`}
+              title={`Message #${m.seq_no} - ${
+                m.from === currentDeskId ? "You" : formatPhoneId(m.from)
+              }`}
             >
               <span className="icon-number">{m.seq_no}</span>
-              <span className="icon-direction">{m.from === currentDeskId ? '→' : '←'}</span>
+              <span className="icon-direction">
+                {m.from === currentDeskId ? "→" : "←"}
+              </span>
             </div>
           ))}
         </div>
@@ -282,26 +300,31 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
           <div className="miv-meta-row">
             <span className="miv-label">From:</span>
             <span className="miv-value">
-              {selectedMiv.from === currentDeskId ? 'You' : getDisplayName(selectedMiv.from)}
+              {selectedMiv.from === currentDeskId
+                ? "You"
+                : getDisplayName(selectedMiv.from)}
             </span>
-            {selectedMiv.from !== currentDeskId && !isContact(selectedMiv.from) && (
-              <button 
-                className="btn-add-contact-inline" 
-                onClick={() => openAddContactModal(selectedMiv.from)}
-                title="Add as contact"
-              >
-                + Add Contact
-              </button>
-            )}
+            {selectedMiv.from !== currentDeskId &&
+              !isContact(selectedMiv.from) && (
+                <button
+                  className="btn-add-contact-inline"
+                  onClick={() => openAddContactModal(selectedMiv.from)}
+                  title="Add as contact"
+                >
+                  + Add Contact
+                </button>
+              )}
           </div>
           <div className="miv-meta-row">
             <span className="miv-label">To:</span>
             <span className="miv-value">
-              {selectedMiv.to === currentDeskId ? 'You' : getDisplayName(selectedMiv.to)}
+              {selectedMiv.to === currentDeskId
+                ? "You"
+                : getDisplayName(selectedMiv.to)}
             </span>
             {selectedMiv.to !== currentDeskId && !isContact(selectedMiv.to) && (
-              <button 
-                className="btn-add-contact-inline" 
+              <button
+                className="btn-add-contact-inline"
                 onClick={() => openAddContactModal(selectedMiv.to)}
                 title="Add as contact"
               >
@@ -311,11 +334,15 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
           </div>
           <div className="miv-meta-row">
             <span className="miv-label">Date:</span>
-            <span className="miv-value">{formatDate(selectedMiv.created_at)}</span>
+            <span className="miv-value">
+              {formatDate(selectedMiv.created_at)}
+            </span>
           </div>
           <div className="miv-meta-row">
             <span className="miv-label">Sequence:</span>
-            <span className="miv-value">#{selectedMiv.seq_no} in conversation</span>
+            <span className="miv-value">
+              #{selectedMiv.seq_no} in conversation
+            </span>
           </div>
         </div>
 
@@ -331,63 +358,75 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
         </div>
 
         <div className="miv-actions">
-          {selectedMiv.to === currentDeskId && !showReply && !showAckConfirm && !showForgetConfirm && !showDeleteConfirm && (
-            <>
-              {selectedMiv.is_ack ? (
-                // For ACK mivs, show "Answer" and "Delete" buttons
-                <>
-                  <button 
-                    className="btn btn-primary" 
-                    onClick={() => setShowReply(true)}
-                  >
-                    Answer
-                  </button>
-                  <button 
-                    className="btn btn-danger" 
-                    onClick={() => setShowDeleteConfirm(true)}
-                  >
-                    Delete
-                  </button>
-                </>
-              ) : (
-                // For non-ACK mivs, show "Reply" and "Send ACK" buttons
-                <>
-                  <button 
-                    className="btn btn-primary" 
-                    onClick={() => setShowReply(true)}
-                  >
-                    Reply
-                  </button>
-                  <button 
-                    className="btn btn-ack" 
-                    onClick={() => setShowAckConfirm(true)}
-                  >
-                    Send ACK
-                  </button>
-                </>
-              )}
-            </>
-          )}
-          
+          {selectedMiv.to === currentDeskId &&
+            !showReply &&
+            !showAckConfirm &&
+            !showForgetConfirm &&
+            !showDeleteConfirm && (
+              <>
+                {selectedMiv.is_ack ? (
+                  // For ACK mivs, show "Answer" and "Delete" buttons
+                  <>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => setShowReply(true)}
+                    >
+                      Answer
+                    </button>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => setShowDeleteConfirm(true)}
+                    >
+                      Delete
+                    </button>
+                  </>
+                ) : (
+                  // For non-ACK mivs, show "Reply" and "Send ACK" buttons
+                  <>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => setShowReply(true)}
+                    >
+                      Reply
+                    </button>
+                    <button
+                      className="btn btn-ack"
+                      onClick={() => setShowAckConfirm(true)}
+                    >
+                      Send ACK
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+
           {/* Add forget button for sent messages */}
-          {selectedMiv.from === currentDeskId && !selectedMiv.is_forgotten && selectedMiv.state === 'SENT' && !showForgetConfirm && (
-            <button 
-              className="btn btn-forget" 
-              onClick={() => setShowForgetConfirm(true)}
-              title="Stop tracking replies for this message"
-            >
-              Forget
-            </button>
-          )}
-          
+          {selectedMiv.from === currentDeskId &&
+            !selectedMiv.is_forgotten &&
+            selectedMiv.state === "SENT" &&
+            !showForgetConfirm && (
+              <button
+                className="btn btn-forget"
+                onClick={() => setShowForgetConfirm(true)}
+                title="Stop tracking replies for this message"
+              >
+                Forget
+              </button>
+            )}
+
           {selectedMiv.is_forgotten && (
-            <span className="forgotten-label">This message has been forgotten</span>
+            <span className="forgotten-label">
+              This message has been forgotten
+            </span>
           )}
         </div>
 
         {showForgetConfirm && (
           <div className="forget-confirm">
-            <p>Are you sure you want to forget this message? It will be removed from your SENT basket and you will no longer track replies to it.</p>
+            <p>
+              Are you sure you want to forget this message? It will be removed
+              from your SENT basket and you will no longer track replies to it.
+            </p>
             <div className="forget-actions">
               <button onClick={handleForget} className="btn btn-danger">
                 Yes, Forget This Message
@@ -404,7 +443,10 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
 
         {showDeleteConfirm && (
           <div className="delete-confirm">
-            <p>Are you sure you want to delete this conversation? The conversation will be archived and removed from your inbox.</p>
+            <p>
+              Are you sure you want to delete this conversation? The
+              conversation will be archived and removed from your inbox.
+            </p>
             <div className="delete-actions">
               <button onClick={handleDelete} className="btn btn-danger">
                 Yes, Archive This Conversation
@@ -422,12 +464,16 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
         {showAckConfirm && (
           <div className="ack-confirm">
             <h3>Send Acknowledgment</h3>
-            <p>Send an acknowledgment message? The recipient can reply to continue the conversation or delete it to end.</p>
+            <p>
+              Send an acknowledgment message? The recipient can reply to
+              continue the conversation or delete it to end.
+            </p>
             <textarea
               value={ackBody}
               onChange={(e) => setAckBody(e.target.value)}
               placeholder="Optional: Type your acknowledgment message..."
-              rows={3}
+              rows={5}
+              style={{ width: "100%" }}
             />
             <div className="ack-actions">
               <button onClick={handleAck} className="btn btn-danger">
@@ -436,7 +482,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
               <button
                 onClick={() => {
                   setShowAckConfirm(false);
-                  setAckBody('');
+                  setAckBody("");
                 }}
                 className="btn"
               >
@@ -472,12 +518,12 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
                   Send ACK
                 </button>
               )}
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
+              <button
+                type="button"
+                className="btn btn-secondary"
                 onClick={() => {
                   setShowReply(false);
-                  setReplyBody('');
+                  setReplyBody("");
                 }}
               >
                 Cancel
@@ -489,8 +535,14 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
 
       {/* Add Contact Modal */}
       {showAddContactModal && (
-        <div className="add-contact-modal-overlay" onClick={() => setShowAddContactModal(false)}>
-          <div className="add-contact-modal" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="add-contact-modal-overlay"
+          onClick={() => setShowAddContactModal(false)}
+        >
+          <div
+            className="add-contact-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3>Add New Contact</h3>
             <form onSubmit={handleAddContact}>
               <div className="modal-form-group">
@@ -515,7 +567,11 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
                 />
               </div>
               <div className="modal-actions">
-                <button type="button" onClick={() => setShowAddContactModal(false)} className="btn btn-secondary">
+                <button
+                  type="button"
+                  onClick={() => setShowAddContactModal(false)}
+                  className="btn btn-secondary"
+                >
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary">
