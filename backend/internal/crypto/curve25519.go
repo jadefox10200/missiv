@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	
+
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/nacl/box"
 )
@@ -21,7 +21,7 @@ func GenerateKeyPair() (*KeyPair, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate key pair: %w", err)
 	}
-	
+
 	return &KeyPair{
 		PublicKey:  *publicKey,
 		PrivateKey: *privateKey,
@@ -53,7 +53,7 @@ func Encrypt(message []byte, recipientPublicKey, senderPrivateKey [32]byte) ([]b
 	if _, err := rand.Read(nonce[:]); err != nil {
 		return nil, fmt.Errorf("failed to generate nonce: %w", err)
 	}
-	
+
 	encrypted := box.Seal(nonce[:], message, &nonce, &recipientPublicKey, &senderPrivateKey)
 	return encrypted, nil
 }
@@ -63,15 +63,15 @@ func Decrypt(encrypted []byte, senderPublicKey, recipientPrivateKey [32]byte) ([
 	if len(encrypted) < 24 {
 		return nil, fmt.Errorf("encrypted message too short")
 	}
-	
+
 	var nonce [24]byte
 	copy(nonce[:], encrypted[:24])
-	
+
 	decrypted, ok := box.Open(nil, encrypted[24:], &nonce, &senderPublicKey, &recipientPrivateKey)
 	if !ok {
 		return nil, fmt.Errorf("failed to decrypt message")
 	}
-	
+
 	return decrypted, nil
 }
 

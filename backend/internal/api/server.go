@@ -24,7 +24,7 @@ func NewServer() *Server {
 		storage: storage.NewMemoryStorage(),
 		router:  gin.Default(),
 	}
-	
+
 	s.setupRoutes()
 	return s
 }
@@ -36,67 +36,68 @@ func (s *Server) setupRoutes() {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		
+
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
-		
+
 		c.Next()
 	})
-	
+
 	api := s.router.Group("/api")
 	{
 		// Account endpoints (authentication)
 		api.POST("/accounts/register", s.registerAccount)
 		api.POST("/accounts/login", s.loginAccount)
 		api.POST("/accounts/recover-password", s.recoverPassword)
-		
+
 		// Desk endpoints
 		api.GET("/desks", s.listDesks)
 		api.POST("/desks", s.createDesk)
 		api.POST("/desks/switch", s.switchDesk)
-		
+
 		// Conversation endpoints
 		api.GET("/conversations", s.listConversations)
 		api.GET("/conversations/:id", s.getConversation)
 		api.POST("/conversations", s.createConversation)
 		api.POST("/conversations/:id/reply", s.replyToConversation)
-		
+		api.POST("/conversations/:id/archive", s.archiveConversation)
+
 		// Miv read endpoints
 		api.POST("/mivs/:id/read", s.markMivAsRead)
 		api.POST("/mivs/:id/forget", s.forgetMiv)
-		
+
 		// Notification endpoints
 		api.GET("/notifications", s.listNotifications)
 		api.POST("/notifications/:id/read", s.markNotificationAsRead)
-		
+
 		// Contact endpoints
 		api.GET("/desks/:desk_id/contacts", s.listContacts)
 		api.POST("/desks/:desk_id/contacts", s.createContact)
 		api.GET("/contacts/:contact_id", s.getContact)
 		api.PUT("/contacts/:contact_id", s.updateContact)
 		api.DELETE("/contacts/:contact_id", s.deleteContact)
-		
+
 		// Legacy Identity endpoints (for backward compatibility)
 		api.GET("/identity", s.getIdentity)
 		api.POST("/identity", s.createIdentity)
 		api.GET("/identity/publickey", s.getPublicKey)
-		
+
 		// Legacy Miv endpoints (for backward compatibility)
 		api.GET("/mivs", s.listMivs)
 		api.GET("/mivs/:id", s.getMiv)
 		api.POST("/mivs", s.createMiv)
 		api.PUT("/mivs/:id/state", s.updateMivState)
-		
+
 		// Filtered miv endpoints
 		api.GET("/mivs/inbox", s.getInbox)
 		api.GET("/mivs/pending", s.getPending)
-		api.GET("/mivs/sent", s.getSent) // Returns SENT state (combines old OUT and UNANSWERED)
+		api.GET("/mivs/sent", s.getSent)             // Returns SENT state (combines old OUT and UNANSWERED)
 		api.GET("/mivs/unanswered", s.getUnanswered) // DEPRECATED: Use /mivs/sent instead
 		api.GET("/mivs/archived", s.getArchived)
 	}
-	
+
 	// Health check
 	s.router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -116,7 +117,7 @@ func (s *Server) getIdentity(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Identity not found. Create one first."})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, identity)
 }
 
@@ -124,12 +125,12 @@ func (s *Server) createIdentity(c *gin.Context) {
 	var req struct {
 		Name string `json:"name"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// Generate new key pair
 	keyPair, err := crypto.GenerateKeyPair()
 	if err != nil {
@@ -137,22 +138,22 @@ func (s *Server) createIdentity(c *gin.Context) {
 		return
 	}
 	s.keyPair = keyPair
-	
+
 	// Generate phone-style ID
 	id, err := crypto.GeneratePhoneStyleID()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate ID"})
 		return
 	}
-	
+
 	identity := &models.Identity{
 		ID:        id,
 		PublicKey: crypto.PublicKeyToBase64(keyPair.PublicKey),
 		Name:      req.Name,
 	}
-	
+
 	s.storage.SetIdentity(identity)
-	
+
 	c.JSON(http.StatusCreated, identity)
 }
 
@@ -162,7 +163,7 @@ func (s *Server) getPublicKey(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Identity not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"public_key": identity.PublicKey,
 		"id":         identity.ID,
@@ -177,36 +178,36 @@ func (s *Server) listMivs(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, mivs)
 }
 
 func (s *Server) getMiv(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	miv, err := s.storage.GetMiv(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Miv not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, miv)
 }
 
 func (s *Server) createMiv(c *gin.Context) {
 	var req models.CreateMivRequest
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	identity, err := s.storage.GetIdentity()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Identity not set"})
 		return
 	}
-	
+
 	// For now, store as plain text. In production, encrypt the body.
 	// Encryption would require recipient's public key.
 	miv := &models.Miv{
@@ -218,29 +219,29 @@ func (s *Server) createMiv(c *gin.Context) {
 		CreatedAt:   time.Now(),
 		IsEncrypted: false, // Set to true when implementing full encryption
 	}
-	
+
 	if err := s.storage.CreateMiv(miv); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create miv"})
 		return
 	}
-	
+
 	c.JSON(http.StatusCreated, miv)
 }
 
 func (s *Server) updateMivState(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var req models.UpdateStateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	if err := s.storage.UpdateMivState(id, req.State); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	miv, _ := s.storage.GetMiv(id)
 	c.JSON(http.StatusOK, miv)
 }
@@ -253,7 +254,7 @@ func (s *Server) getInbox(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, mivs)
 }
 
@@ -263,7 +264,7 @@ func (s *Server) getPending(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, mivs)
 }
 
@@ -273,14 +274,14 @@ func (s *Server) getSent(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// For backwards compatibility, also include old OUT and UNANSWERED states
 	outMivs, _ := s.storage.ListMivs(models.StateOUT)
 	unansweredMivs, _ := s.storage.ListMivs(models.StateUNANSWERED)
-	
+
 	allMivs := append(sentMivs, outMivs...)
 	allMivs = append(allMivs, unansweredMivs...)
-	
+
 	c.JSON(http.StatusOK, allMivs)
 }
 
@@ -295,6 +296,6 @@ func (s *Server) getArchived(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, mivs)
 }

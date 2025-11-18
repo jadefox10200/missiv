@@ -15,26 +15,26 @@ type MemoryStorage struct {
 	mivs       map[string]*models.Miv
 	identity   *models.Identity
 	mivCounter int
-	
+
 	// Multi-user account fields
-	accounts         map[string]*models.Account        // accountID -> Account
-	accountsByUsername map[string]*models.Account      // username -> Account
-	desks            map[string]*models.Desk           // deskID -> Desk
-	deskPrivateKeys  map[string][32]byte              // deskID -> PrivateKey
-	conversations    map[string]*models.Conversation   // conversationID -> Conversation
-	conversationMivs map[string][]*models.ConversationMiv // conversationID -> []Miv
-	notifications    map[string]*models.Notification   // notificationID -> Notification
-	notificationsByDesk map[string][]*models.Notification // deskID -> []Notification
-	contacts         map[string]*models.Contact        // contactID -> Contact
-	contactsByDesk   map[string][]*models.Contact      // deskID -> []Contact
-	
-	accountCounter      int
-	conversationCounter int
+	accounts            map[string]*models.Account           // accountID -> Account
+	accountsByUsername  map[string]*models.Account           // username -> Account
+	desks               map[string]*models.Desk              // deskID -> Desk
+	deskPrivateKeys     map[string][32]byte                  // deskID -> PrivateKey
+	conversations       map[string]*models.Conversation      // conversationID -> Conversation
+	conversationMivs    map[string][]*models.ConversationMiv // conversationID -> []Miv
+	notifications       map[string]*models.Notification      // notificationID -> Notification
+	notificationsByDesk map[string][]*models.Notification    // deskID -> []Notification
+	contacts            map[string]*models.Contact           // contactID -> Contact
+	contactsByDesk      map[string][]*models.Contact         // deskID -> []Contact
+
+	accountCounter         int
+	conversationCounter    int
 	conversationMivCounter int
-	notificationCounter int
-	contactCounter      int
-	
-	mu         sync.RWMutex
+	notificationCounter    int
+	contactCounter         int
+
+	mu sync.RWMutex
 }
 
 // NewMemoryStorage creates a new memory storage instance
@@ -65,11 +65,11 @@ func (s *MemoryStorage) SetIdentity(identity *models.Identity) {
 func (s *MemoryStorage) GetIdentity() (*models.Identity, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	if s.identity == nil {
 		return nil, fmt.Errorf("identity not set")
 	}
-	
+
 	return s.identity, nil
 }
 
@@ -77,16 +77,16 @@ func (s *MemoryStorage) GetIdentity() (*models.Identity, error) {
 func (s *MemoryStorage) CreateMiv(miv *models.Miv) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if miv.ID == "" {
 		s.mivCounter++
 		miv.ID = fmt.Sprintf("miv-%d", s.mivCounter)
 	}
-	
+
 	if miv.CreatedAt.IsZero() {
 		miv.CreatedAt = time.Now()
 	}
-	
+
 	s.mivs[miv.ID] = miv
 	return nil
 }
@@ -95,12 +95,12 @@ func (s *MemoryStorage) CreateMiv(miv *models.Miv) error {
 func (s *MemoryStorage) GetMiv(id string) (*models.Miv, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	miv, exists := s.mivs[id]
 	if !exists {
 		return nil, fmt.Errorf("miv not found: %s", id)
 	}
-	
+
 	return miv, nil
 }
 
@@ -108,15 +108,15 @@ func (s *MemoryStorage) GetMiv(id string) (*models.Miv, error) {
 func (s *MemoryStorage) ListMivs(state models.MivState) ([]*models.Miv, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	var result []*models.Miv
-	
+
 	for _, miv := range s.mivs {
 		if state == "" || miv.State == state {
 			result = append(result, miv)
 		}
 	}
-	
+
 	return result, nil
 }
 
@@ -124,14 +124,14 @@ func (s *MemoryStorage) ListMivs(state models.MivState) ([]*models.Miv, error) {
 func (s *MemoryStorage) UpdateMivState(id string, state models.MivState) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	miv, exists := s.mivs[id]
 	if !exists {
 		return fmt.Errorf("miv not found: %s", id)
 	}
-	
+
 	miv.State = state
-	
+
 	// Update timestamps based on state
 	now := time.Now()
 	switch state {
@@ -142,7 +142,7 @@ func (s *MemoryStorage) UpdateMivState(id string, state models.MivState) error {
 			miv.ReceivedAt = &now
 		}
 	}
-	
+
 	return nil
 }
 
@@ -150,11 +150,11 @@ func (s *MemoryStorage) UpdateMivState(id string, state models.MivState) error {
 func (s *MemoryStorage) DeleteMiv(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if _, exists := s.mivs[id]; !exists {
 		return fmt.Errorf("miv not found: %s", id)
 	}
-	
+
 	delete(s.mivs, id)
 	return nil
 }
@@ -165,22 +165,22 @@ func (s *MemoryStorage) DeleteMiv(id string) error {
 func (s *MemoryStorage) CreateAccount(account *models.Account) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if account.ID == "" {
 		s.accountCounter++
 		account.ID = fmt.Sprintf("acc-%d", s.accountCounter)
 	}
-	
+
 	if account.CreatedAt.IsZero() {
 		account.CreatedAt = time.Now()
 	}
 	account.UpdatedAt = account.CreatedAt
-	
+
 	// Check if username already exists
 	if _, exists := s.accountsByUsername[account.Username]; exists {
 		return fmt.Errorf("username already exists")
 	}
-	
+
 	s.accounts[account.ID] = account
 	s.accountsByUsername[account.Username] = account
 	return nil
@@ -190,12 +190,12 @@ func (s *MemoryStorage) CreateAccount(account *models.Account) error {
 func (s *MemoryStorage) GetAccountByID(id string) (*models.Account, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	account, exists := s.accounts[id]
 	if !exists {
 		return nil, fmt.Errorf("account not found: %s", id)
 	}
-	
+
 	return account, nil
 }
 
@@ -203,12 +203,12 @@ func (s *MemoryStorage) GetAccountByID(id string) (*models.Account, error) {
 func (s *MemoryStorage) GetAccountByUsername(username string) (*models.Account, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	account, exists := s.accountsByUsername[username]
 	if !exists {
 		return nil, fmt.Errorf("account not found: %s", username)
 	}
-	
+
 	return account, nil
 }
 
@@ -216,11 +216,11 @@ func (s *MemoryStorage) GetAccountByUsername(username string) (*models.Account, 
 func (s *MemoryStorage) UpdateAccount(account *models.Account) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if _, exists := s.accounts[account.ID]; !exists {
 		return fmt.Errorf("account not found: %s", account.ID)
 	}
-	
+
 	account.UpdatedAt = time.Now()
 	s.accounts[account.ID] = account
 	return nil
@@ -232,11 +232,11 @@ func (s *MemoryStorage) UpdateAccount(account *models.Account) error {
 func (s *MemoryStorage) CreateDesk(desk *models.Desk, privateKey [32]byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if desk.CreatedAt.IsZero() {
 		desk.CreatedAt = time.Now()
 	}
-	
+
 	s.desks[desk.ID] = desk
 	s.deskPrivateKeys[desk.ID] = privateKey
 	return nil
@@ -246,12 +246,12 @@ func (s *MemoryStorage) CreateDesk(desk *models.Desk, privateKey [32]byte) error
 func (s *MemoryStorage) GetDesk(id string) (*models.Desk, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	desk, exists := s.desks[id]
 	if !exists {
 		return nil, fmt.Errorf("desk not found: %s", id)
 	}
-	
+
 	return desk, nil
 }
 
@@ -259,12 +259,12 @@ func (s *MemoryStorage) GetDesk(id string) (*models.Desk, error) {
 func (s *MemoryStorage) GetDeskPrivateKey(id string) ([32]byte, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	key, exists := s.deskPrivateKeys[id]
 	if !exists {
 		return [32]byte{}, fmt.Errorf("desk private key not found: %s", id)
 	}
-	
+
 	return key, nil
 }
 
@@ -272,14 +272,14 @@ func (s *MemoryStorage) GetDeskPrivateKey(id string) ([32]byte, error) {
 func (s *MemoryStorage) ListDesksByAccount(accountID string) ([]*models.Desk, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	var result []*models.Desk
 	for _, desk := range s.desks {
 		if desk.AccountID == accountID {
 			result = append(result, desk)
 		}
 	}
-	
+
 	return result, nil
 }
 
@@ -289,17 +289,17 @@ func (s *MemoryStorage) ListDesksByAccount(accountID string) ([]*models.Desk, er
 func (s *MemoryStorage) CreateConversation(conv *models.Conversation) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if conv.ID == "" {
 		s.conversationCounter++
 		conv.ID = fmt.Sprintf("conv-%d", s.conversationCounter)
 	}
-	
+
 	if conv.CreatedAt.IsZero() {
 		conv.CreatedAt = time.Now()
 	}
 	conv.UpdatedAt = conv.CreatedAt
-	
+
 	s.conversations[conv.ID] = conv
 	s.conversationMivs[conv.ID] = []*models.ConversationMiv{}
 	return nil
@@ -309,12 +309,12 @@ func (s *MemoryStorage) CreateConversation(conv *models.Conversation) error {
 func (s *MemoryStorage) GetConversation(id string) (*models.Conversation, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	conv, exists := s.conversations[id]
 	if !exists {
 		return nil, fmt.Errorf("conversation not found: %s", id)
 	}
-	
+
 	return conv, nil
 }
 
@@ -322,17 +322,17 @@ func (s *MemoryStorage) GetConversation(id string) (*models.Conversation, error)
 func (s *MemoryStorage) ListConversationsByDesk(deskID string) ([]*models.Conversation, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	// Use a map to track unique conversations (avoid duplicates)
 	conversationMap := make(map[string]*models.Conversation)
-	
+
 	// First, add conversations created by this desk
 	for _, conv := range s.conversations {
 		if conv.DeskID == deskID {
 			conversationMap[conv.ID] = conv
 		}
 	}
-	
+
 	// Then, add conversations where this desk is a participant (sent to or received from)
 	for convID, mivs := range s.conversationMivs {
 		for _, miv := range mivs {
@@ -344,13 +344,13 @@ func (s *MemoryStorage) ListConversationsByDesk(deskID string) ([]*models.Conver
 			}
 		}
 	}
-	
+
 	// Convert map to slice
 	var result []*models.Conversation
 	for _, conv := range conversationMap {
 		result = append(result, conv)
 	}
-	
+
 	return result, nil
 }
 
@@ -358,11 +358,11 @@ func (s *MemoryStorage) ListConversationsByDesk(deskID string) ([]*models.Conver
 func (s *MemoryStorage) UpdateConversation(conv *models.Conversation) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if _, exists := s.conversations[conv.ID]; !exists {
 		return fmt.Errorf("conversation not found: %s", conv.ID)
 	}
-	
+
 	conv.UpdatedAt = time.Now()
 	s.conversations[conv.ID] = conv
 	return nil
@@ -372,35 +372,35 @@ func (s *MemoryStorage) UpdateConversation(conv *models.Conversation) error {
 func (s *MemoryStorage) CreateConversationMiv(miv *models.ConversationMiv) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if miv.ID == "" {
 		s.conversationMivCounter++
 		miv.ID = fmt.Sprintf("cmiv-%d", s.conversationMivCounter)
 	}
-	
+
 	if miv.CreatedAt.IsZero() {
 		miv.CreatedAt = time.Now()
 	}
-	
+
 	// Get current mivs for this conversation
 	mivs, exists := s.conversationMivs[miv.ConversationID]
 	if !exists {
 		return fmt.Errorf("conversation not found: %s", miv.ConversationID)
 	}
-	
+
 	// Set sequence number
 	if miv.SeqNo == 0 {
 		miv.SeqNo = len(mivs) + 1
 	}
-	
+
 	s.conversationMivs[miv.ConversationID] = append(mivs, miv)
-	
+
 	// Update conversation
 	if conv, exists := s.conversations[miv.ConversationID]; exists {
 		conv.MivCount = len(s.conversationMivs[miv.ConversationID])
 		conv.UpdatedAt = time.Now()
 	}
-	
+
 	return nil
 }
 
@@ -408,12 +408,12 @@ func (s *MemoryStorage) CreateConversationMiv(miv *models.ConversationMiv) error
 func (s *MemoryStorage) GetConversationMivs(conversationID string) ([]*models.ConversationMiv, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	mivs, exists := s.conversationMivs[conversationID]
 	if !exists {
 		return nil, fmt.Errorf("conversation not found: %s", conversationID)
 	}
-	
+
 	return mivs, nil
 }
 
@@ -421,19 +421,19 @@ func (s *MemoryStorage) GetConversationMivs(conversationID string) ([]*models.Co
 func (s *MemoryStorage) UpdateConversationMiv(miv *models.ConversationMiv) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	mivs, exists := s.conversationMivs[miv.ConversationID]
 	if !exists {
 		return fmt.Errorf("conversation not found: %s", miv.ConversationID)
 	}
-	
+
 	for i, m := range mivs {
 		if m.ID == miv.ID {
 			mivs[i] = miv
 			return nil
 		}
 	}
-	
+
 	return fmt.Errorf("miv not found: %s", miv.ID)
 }
 
@@ -441,7 +441,7 @@ func (s *MemoryStorage) UpdateConversationMiv(miv *models.ConversationMiv) error
 func (s *MemoryStorage) MarkConversationMivAsRead(mivID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	// Find the miv across all conversations
 	for _, mivs := range s.conversationMivs {
 		for i, miv := range mivs {
@@ -452,7 +452,7 @@ func (s *MemoryStorage) MarkConversationMivAsRead(mivID string) error {
 			}
 		}
 	}
-	
+
 	return fmt.Errorf("miv not found or already read: %s", mivID)
 }
 
@@ -460,12 +460,12 @@ func (s *MemoryStorage) MarkConversationMivAsRead(mivID string) error {
 func (s *MemoryStorage) MarkConversationMivsAsRead(conversationID string, deskID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	mivs, exists := s.conversationMivs[conversationID]
 	if !exists {
 		return fmt.Errorf("conversation not found: %s", conversationID)
 	}
-	
+
 	now := time.Now()
 	for i, miv := range mivs {
 		// Mark as read only if it's addressed to this desk and not already read
@@ -473,7 +473,7 @@ func (s *MemoryStorage) MarkConversationMivsAsRead(conversationID string, deskID
 			mivs[i].ReadAt = &now
 		}
 	}
-	
+
 	return nil
 }
 
@@ -481,7 +481,7 @@ func (s *MemoryStorage) MarkConversationMivsAsRead(conversationID string, deskID
 func (s *MemoryStorage) GetConversationMiv(mivID string) (*models.ConversationMiv, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	// Find the miv across all conversations
 	for _, mivs := range s.conversationMivs {
 		for _, miv := range mivs {
@@ -490,7 +490,7 @@ func (s *MemoryStorage) GetConversationMiv(mivID string) (*models.ConversationMi
 			}
 		}
 	}
-	
+
 	return nil, fmt.Errorf("miv not found: %s", mivID)
 }
 
@@ -500,16 +500,16 @@ func (s *MemoryStorage) GetConversationMiv(mivID string) (*models.ConversationMi
 func (s *MemoryStorage) CreateNotification(notif *models.Notification) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if notif.ID == "" {
 		s.notificationCounter++
 		notif.ID = fmt.Sprintf("notif-%d", s.notificationCounter)
 	}
-	
+
 	if notif.CreatedAt.IsZero() {
 		notif.CreatedAt = time.Now()
 	}
-	
+
 	s.notifications[notif.ID] = notif
 	s.notificationsByDesk[notif.DeskID] = append(s.notificationsByDesk[notif.DeskID], notif)
 	return nil
@@ -519,12 +519,12 @@ func (s *MemoryStorage) CreateNotification(notif *models.Notification) error {
 func (s *MemoryStorage) GetNotification(id string) (*models.Notification, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	notif, exists := s.notifications[id]
 	if !exists {
 		return nil, fmt.Errorf("notification not found: %s", id)
 	}
-	
+
 	return notif, nil
 }
 
@@ -532,23 +532,23 @@ func (s *MemoryStorage) GetNotification(id string) (*models.Notification, error)
 func (s *MemoryStorage) ListNotificationsByDesk(deskID string, unreadOnly bool) ([]*models.Notification, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	notifs, exists := s.notificationsByDesk[deskID]
 	if !exists {
 		return []*models.Notification{}, nil
 	}
-	
+
 	if !unreadOnly {
 		return notifs, nil
 	}
-	
+
 	var result []*models.Notification
 	for _, notif := range notifs {
 		if !notif.Read {
 			result = append(result, notif)
 		}
 	}
-	
+
 	return result, nil
 }
 
@@ -556,12 +556,12 @@ func (s *MemoryStorage) ListNotificationsByDesk(deskID string, unreadOnly bool) 
 func (s *MemoryStorage) MarkNotificationAsRead(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	notif, exists := s.notifications[id]
 	if !exists {
 		return fmt.Errorf("notification not found: %s", id)
 	}
-	
+
 	now := time.Now()
 	notif.Read = true
 	notif.ReadAt = &now
@@ -574,21 +574,21 @@ func (s *MemoryStorage) MarkNotificationAsRead(id string) error {
 func (s *MemoryStorage) CreateContact(contact *models.Contact) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if contact.ID == "" {
 		s.contactCounter++
 		contact.ID = fmt.Sprintf("contact-%d", s.contactCounter)
 	}
-	
+
 	now := time.Now()
 	if contact.CreatedAt.IsZero() {
 		contact.CreatedAt = now
 	}
 	contact.UpdatedAt = now
-	
+
 	s.contacts[contact.ID] = contact
 	s.contactsByDesk[contact.DeskID] = append(s.contactsByDesk[contact.DeskID], contact)
-	
+
 	return nil
 }
 
@@ -596,12 +596,12 @@ func (s *MemoryStorage) CreateContact(contact *models.Contact) error {
 func (s *MemoryStorage) GetContact(id string) (*models.Contact, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	contact, exists := s.contacts[id]
 	if !exists {
 		return nil, fmt.Errorf("contact not found: %s", id)
 	}
-	
+
 	return contact, nil
 }
 
@@ -609,12 +609,12 @@ func (s *MemoryStorage) GetContact(id string) (*models.Contact, error) {
 func (s *MemoryStorage) ListContactsForDesk(deskID string) ([]*models.Contact, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	contacts, exists := s.contactsByDesk[deskID]
 	if !exists {
 		return []*models.Contact{}, nil
 	}
-	
+
 	return contacts, nil
 }
 
@@ -622,12 +622,12 @@ func (s *MemoryStorage) ListContactsForDesk(deskID string) ([]*models.Contact, e
 func (s *MemoryStorage) UpdateContact(contact *models.Contact) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	existing, exists := s.contacts[contact.ID]
 	if !exists {
 		return fmt.Errorf("contact not found: %s", contact.ID)
 	}
-	
+
 	// Update fields
 	if contact.Name != "" {
 		existing.Name = contact.Name
@@ -637,7 +637,7 @@ func (s *MemoryStorage) UpdateContact(contact *models.Contact) error {
 	}
 	existing.Notes = contact.Notes
 	existing.UpdatedAt = time.Now()
-	
+
 	return nil
 }
 
@@ -645,15 +645,15 @@ func (s *MemoryStorage) UpdateContact(contact *models.Contact) error {
 func (s *MemoryStorage) DeleteContact(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	contact, exists := s.contacts[id]
 	if !exists {
 		return fmt.Errorf("contact not found: %s", id)
 	}
-	
+
 	// Remove from main map
 	delete(s.contacts, id)
-	
+
 	// Remove from desk contacts
 	deskContacts := s.contactsByDesk[contact.DeskID]
 	for i, c := range deskContacts {
@@ -662,7 +662,7 @@ func (s *MemoryStorage) DeleteContact(id string) error {
 			break
 		}
 	}
-	
+
 	return nil
 }
 
@@ -670,17 +670,17 @@ func (s *MemoryStorage) DeleteContact(id string) error {
 func (s *MemoryStorage) GetContactByDeskIDRef(deskID, deskIDRef string) (*models.Contact, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	contacts, exists := s.contactsByDesk[deskID]
 	if !exists {
 		return nil, fmt.Errorf("no contacts found for desk")
 	}
-	
+
 	for _, contact := range contacts {
 		if contact.DeskIDRef == deskIDRef {
 			return contact, nil
 		}
 	}
-	
+
 	return nil, fmt.Errorf("contact not found for desk ID: %s", deskIDRef)
 }

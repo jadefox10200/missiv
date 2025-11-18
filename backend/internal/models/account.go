@@ -4,15 +4,15 @@ import "time"
 
 // Account represents a user account with authentication
 type Account struct {
-	ID           string    `json:"id"`            // Unique account ID
-	Username     string    `json:"username"`      // Username for login
-	PasswordHash string    `json:"-"`             // Argon2 hashed password (not exposed in JSON)
-	DisplayName  string    `json:"display_name"`  // Display name
-	CreatedAt    time.Time `json:"created_at"`    // When the account was created
-	UpdatedAt    time.Time `json:"updated_at"`    // When the account was last updated
-	Desks        []string  `json:"desks"`         // List of desk IDs (zIDs) this account owns
-	ActiveDesk   string    `json:"active_desk"`   // Currently active desk ID
-	
+	ID           string    `json:"id"`           // Unique account ID
+	Username     string    `json:"username"`     // Username for login
+	PasswordHash string    `json:"-"`            // Argon2 hashed password (not exposed in JSON)
+	DisplayName  string    `json:"display_name"` // Display name
+	CreatedAt    time.Time `json:"created_at"`   // When the account was created
+	UpdatedAt    time.Time `json:"updated_at"`   // When the account was last updated
+	Desks        []string  `json:"desks"`        // List of desk IDs (zIDs) this account owns
+	ActiveDesk   string    `json:"active_desk"`  // Currently active desk ID
+
 	// Security questions for password recovery (hashed answers)
 	BirthdayHash     string `json:"-"` // Hash of birthday (YYYY-MM-DD format)
 	FirstPetNameHash string `json:"-"` // Hash of first pet name
@@ -21,11 +21,11 @@ type Account struct {
 
 // Desk represents a desk/identity that belongs to an account
 type Desk struct {
-	ID         string    `json:"id"`          // Phone-number-style ID (zID)
-	AccountID  string    `json:"account_id"`  // Parent account ID
-	PublicKey  string    `json:"public_key"`  // Curve25519 public key (base64)
-	Name       string    `json:"name"`        // Display name for this desk
-	CreatedAt  time.Time `json:"created_at"`  // When the desk was created
+	ID        string    `json:"id"`         // Phone-number-style ID (zID)
+	AccountID string    `json:"account_id"` // Parent account ID
+	PublicKey string    `json:"public_key"` // Curve25519 public key (base64)
+	Name      string    `json:"name"`       // Display name for this desk
+	CreatedAt time.Time `json:"created_at"` // When the desk was created
 }
 
 // RegisterRequest represents an account registration request
@@ -33,11 +33,11 @@ type RegisterRequest struct {
 	Username    string `json:"username" binding:"required,min=3,max=32"`
 	Password    string `json:"password" binding:"required,min=8"`
 	DisplayName string `json:"display_name" binding:"required"`
-	
+
 	// Security questions for password recovery
-	Birthday       string `json:"birthday" binding:"required"`        // Format: YYYY-MM-DD
-	FirstPetName   string `json:"first_pet_name" binding:"required"`  // First pet's name
-	MotherMaiden   string `json:"mother_maiden" binding:"required"`   // Mother's maiden name
+	Birthday     string `json:"birthday" binding:"required"`       // Format: YYYY-MM-DD
+	FirstPetName string `json:"first_pet_name" binding:"required"` // First pet's name
+	MotherMaiden string `json:"mother_maiden" binding:"required"`  // Mother's maiden name
 }
 
 // LoginRequest represents a login request
