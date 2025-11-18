@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GetConversationResponse, Contact } from '../types';
+import { GetConversationResponse, Contact, ConversationMiv } from '../types';
 import * as api from '../api/client';
 import './ConversationThread.css';
 
@@ -17,6 +17,7 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [ackBody, setAckBody] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [selectedMiv, setSelectedMiv] = useState<ConversationMiv | null>(null);
 
   useEffect(() => {
     const loadContactsData = async () => {
@@ -114,14 +115,46 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
     );
   }
 
+  const handleMivClick = (miv: ConversationMiv) => {
+    setSelectedMiv(miv);
+  };
+
   return (
-    <div className="conversation-thread">
+    <div className="conversation-thread miv-detail-with-context">
+      {/* Conversation thread context at the top - similar to basket view */}
+      <div className="thread-context">
+        <div className="thread-header">
+          <h3>Conversation Thread</h3>
+          <span className="thread-count">
+            {conversation.mivs.length} {conversation.mivs.length === 1 ? 'message' : 'messages'}
+          </span>
+        </div>
+        <div className="thread-icons">
+          {conversation.mivs.map((m) => (
+            <div
+              key={m.id}
+              className={`thread-icon ${
+                selectedMiv?.id === m.id ? "active" : ""
+              } ${m.from === currentDeskId ? "outgoing" : "incoming"}`}
+              onClick={() => handleMivClick(m)}
+              title={`Message #${m.seq_no} - ${
+                m.from === currentDeskId ? "You" : formatDeskId(m.from)
+              }`}
+            >
+              <span className="icon-number">{m.seq_no}</span>
+              <span className="icon-direction">
+                {m.from === currentDeskId ? "→" : "←"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="conversation-thread-header">
         <h2>{conversation.conversation.subject}</h2>
         <div className="thread-meta">
-          {conversation.mivs.length} {conversation.mivs.length === 1 ? 'message' : 'messages'}
           {conversation.conversation.is_archived && (
-            <span className="archived-badge"> • Archived</span>
+            <span className="archived-badge">Archived</span>
           )}
         </div>
       </div>
@@ -133,7 +166,8 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
           return (
             <div
               key={miv.id}
-              className="message-inbox-item"
+              className={`message-inbox-item ${selectedMiv?.id === miv.id ? "selected" : ""}`}
+              onClick={() => handleMivClick(miv)}
             >
               {/* INBOX-style layout: FROM, DATE, SUBJECT (inline) */}
               <div className="message-inbox-header">
