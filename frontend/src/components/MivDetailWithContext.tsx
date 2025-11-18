@@ -469,11 +469,11 @@ function MivDetailWithContext({
               continue the conversation or delete it to end.
             </p>
             <textarea
+              className="ack-body"
               value={ackBody}
               onChange={(e) => setAckBody(e.target.value)}
               placeholder="Optional: Type your acknowledgment message..."
-              rows={5}
-              style={{ width: "100%" }}
+              rows={4}
             />
             <div className="ack-actions">
               <button onClick={handleAck} className="btn btn-danger">
