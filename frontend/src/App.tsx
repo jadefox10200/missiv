@@ -37,6 +37,7 @@ function App() {
   // Basket view state (primary interface)
   const [selectedBasket, setSelectedBasket] = useState<MivState>('IN');
   const [selectedMiv, setSelectedMiv] = useState<ConversationMiv | null>(null);
+  const [basketRefreshKey, setBasketRefreshKey] = useState<number>(0);
   
   // Basket counts
   const [basketCounts, setBasketCounts] = useState<{
@@ -169,7 +170,8 @@ function App() {
               inboxCount++;
             } else if (miv.state === 'PENDING') {
               pendingCount++;
-            } else if (miv.state === 'SENT') {
+            } else if (miv.state === 'SENT' && !miv.is_ack) {
+              // Exclude ACK mivs from SENT basket count (they don't expect replies)
               sentCount++;
             }
           }
@@ -302,6 +304,9 @@ function App() {
       // Recalculate basket counts
       const response = await api.listConversations(activeDesk.id);
       await calculateBasketCounts(response.conversations, activeDesk.id);
+      
+      // Force basket view to refresh
+      setBasketRefreshKey(prev => prev + 1);
     } catch (err) {
       console.error('Failed to reply:', err);
     }
@@ -320,6 +325,9 @@ function App() {
       // Recalculate basket counts
       const response = await api.listConversations(activeDesk.id);
       await calculateBasketCounts(response.conversations, activeDesk.id);
+      
+      // Force basket view to refresh
+      setBasketRefreshKey(prev => prev + 1);
     } catch (err) {
       console.error('Failed to forget miv:', err);
     }
@@ -340,10 +348,20 @@ function App() {
     if (!activeDesk) return;
 
     try {
-      const response = await api.createConversation(activeDesk.id, request);
-      setSelectedConversation(response);
-      setCurrentView('conversations');
+      await api.createConversation(activeDesk.id, request);
+      
+      // Redirect to inbox instead of conversations screen
+      setSelectedBasket('IN');
+      setCurrentView('baskets');
+      setSelectedMiv(null);
+      
+      // Refresh conversations and basket counts
       await refreshConversations();
+      const convResponse = await api.listConversations(activeDesk.id);
+      await calculateBasketCounts(convResponse.conversations, activeDesk.id);
+      
+      // Force basket view to refresh
+      setBasketRefreshKey(prev => prev + 1);
     } catch (err) {
       console.error('Failed to create conversation:', err);
       throw err;
@@ -540,6 +558,7 @@ function App() {
           <>
             <div className="basket-list-container">
               <BasketView
+                key={basketRefreshKey}
                 deskId={activeDesk.id}
                 selectedBasket={selectedBasket}
                 onMivClick={handleMivClick}

@@ -68,7 +68,12 @@ function BasketView({
             const mivArray = fullConv.mivs || [];
             const filteredMivs = mivArray.filter((miv) => {
               // Filter based on miv state from backend
-              return miv.state === selectedBasket;
+              if (miv.state !== selectedBasket) return false;
+              
+              // Exclude ACK mivs from SENT basket (they don't expect replies)
+              if (selectedBasket === 'SENT' && miv.is_ack) return false;
+              
+              return true;
             });
             allMivs.push(...filteredMivs);
           }
