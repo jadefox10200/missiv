@@ -306,11 +306,8 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
 
         <div className="miv-body-section">
           <pre className="miv-body">
-            {selectedMiv.is_ack ? (
-              <em>ACK - Conversation ended</em>
-            ) : (
-              atob(selectedMiv.body)
-            )}
+            {selectedMiv.is_ack && <span className="ack-badge">[ACK] </span>}
+            {atob(selectedMiv.body)}
           </pre>
         </div>
 
@@ -367,7 +364,7 @@ function MivDetailWithContext({ miv, currentDeskId, onReply, onForget }: MivDeta
 
         {showAckConfirm && (
           <div className="ack-confirm">
-            <p>Are you sure you want to end this conversation with an ACK?</p>
+            <p>Send an acknowledgment message? The recipient can reply to continue the conversation or delete it to end.</p>
             <div className="ack-actions">
               <button onClick={handleAck} className="btn btn-danger">
                 Yes, Send ACK

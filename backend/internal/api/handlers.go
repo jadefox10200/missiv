@@ -561,12 +561,8 @@ func (s *Server) replyToConversation(c *gin.Context) {
 		return
 	}
 
-	// If this is an ACK message, archive the conversation
-	if req.IsAck {
-		conv.IsArchived = true
-		s.storage.UpdateConversation(conv)
-	} else if conv.IsArchived {
-		// If conversation was archived but we got a non-ACK reply, unarchive it
+	// If conversation was archived but we got a reply, unarchive it
+	if conv.IsArchived {
 		conv.IsArchived = false
 		s.storage.UpdateConversation(conv)
 	}
@@ -575,7 +571,7 @@ func (s *Server) replyToConversation(c *gin.Context) {
 	notifType := models.NotificationTypeReply
 	message := fmt.Sprintf("Reply from %s in: %s", deskID, conv.Subject)
 	if req.IsAck {
-		message = fmt.Sprintf("ACK from %s - conversation ended: %s", deskID, conv.Subject)
+		message = fmt.Sprintf("ACK from %s in: %s", deskID, conv.Subject)
 	}
 	
 	notification := &models.Notification{
