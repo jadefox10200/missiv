@@ -51,9 +51,6 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
     // Only show if the latest message is TO us (not from us)
     if (latestMiv.to !== currentDeskId) return false;
     
-    // Don't show if already ACK'd
-    if (latestMiv.is_ack) return false;
-    
     // Don't show if archived
     if (conversation.conversation.is_archived) return false;
     
@@ -124,11 +121,8 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
               </div>
               
               <div className="message-inbox-body">
-                {miv.is_ack ? (
-                  <em>ACK - Conversation ended</em>
-                ) : (
-                  atob(miv.body)
-                )}
+                {miv.is_ack && <span className="ack-badge">[ACK] </span>}
+                {atob(miv.body)}
               </div>
 
               {miv.read_at && (
@@ -152,7 +146,7 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
           <>
             {showAckConfirm ? (
               <div className="ack-confirm">
-                <p>Are you sure you want to end this conversation with an ACK?</p>
+                <p>Send an acknowledgment message? The recipient can reply to continue the conversation or delete it to end.</p>
                 <div className="ack-actions">
                   <button onClick={handleAck} className="btn btn-danger">
                     Yes, Send ACK
@@ -212,7 +206,7 @@ function ConversationThread({ conversation, currentDeskId, onReply }: Conversati
                   className="btn btn-ack"
                   onClick={() => setShowAckConfirm(true)}
                 >
-                  Send ACK (End Conversation)
+                  Send ACK
                 </button>
               </div>
             )}
