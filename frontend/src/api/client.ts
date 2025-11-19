@@ -273,8 +273,11 @@ export const archiveConversation = async (conversationId: string): Promise<void>
 };
 
 // Mark miv as read
-export const markMivAsRead = async (mivId: string): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/mivs/${mivId}/read`, {
+export const markMivAsRead = async (mivId: string, deskId?: string): Promise<void> => {
+  const url = deskId 
+    ? `${API_BASE_URL}/mivs/${mivId}/read?desk_id=${deskId}`
+    : `${API_BASE_URL}/mivs/${mivId}/read`;
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

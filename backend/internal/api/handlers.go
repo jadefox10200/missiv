@@ -680,8 +680,16 @@ func (s *Server) markNotificationAsRead(c *gin.Context) {
 
 func (s *Server) markMivAsRead(c *gin.Context) {
 	mivID := c.Param("id")
+	deskID := c.Query("desk_id")
 
-	if err := s.storage.MarkConversationMivAsRead(mivID); err != nil {
+	// If desk_id is not provided, try to get it from the active desk
+	// For now, we require desk_id to be explicitly provided
+	if deskID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "desk_id is required"})
+		return
+	}
+
+	if err := s.storage.MarkConversationMivAsRead(mivID, deskID); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
