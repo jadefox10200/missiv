@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import { ClassicEditor, Bold, Essentials, Italic, Paragraph, Undo, Heading, Link, List, BlockQuote } from 'ckeditor5';
+import 'ckeditor5/ckeditor5.css';
 import { CreateMivRequest, Contact } from '../types';
 import * as api from '../api/client';
 import './ComposeMiv.css';
@@ -173,14 +176,32 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
 
         <div className="form-group">
           <label htmlFor="body">Message:</label>
-          <textarea
-            id="body"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Enter your message"
-            rows={10}
-            disabled={isSending}
-          />
+          <div className="editor-container">
+            <CKEditor
+              editor={ClassicEditor}
+              config={{
+                toolbar: {
+                  items: ['undo', 'redo', '|', 'heading', '|', 'bold', 'italic', '|', 'link', 'bulletedList', 'numberedList', 'blockQuote']
+                },
+                plugins: [Bold, Essentials, Italic, Paragraph, Undo, Heading, Link, List, BlockQuote],
+                heading: {
+                  options: [
+                    { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                    { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                    { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                    { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' }
+                  ]
+                },
+                placeholder: 'Enter your message...'
+              }}
+              data={body}
+              disabled={isSending}
+              onChange={(event, editor) => {
+                const data = editor.getData();
+                setBody(data);
+              }}
+            />
+          </div>
         </div>
 
         <div className="form-actions">
