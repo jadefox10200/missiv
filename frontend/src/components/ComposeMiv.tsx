@@ -180,6 +180,7 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
             <CKEditor
               editor={ClassicEditor}
               config={{
+                licenseKey: 'GPL',
                 toolbar: {
                   items: ['undo', 'redo', '|', 'heading', '|', 'bold', 'italic', '|', 'link', 'bulletedList', 'numberedList', 'blockQuote']
                 },

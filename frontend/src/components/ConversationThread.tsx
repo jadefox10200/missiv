@@ -252,6 +252,7 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
                   <CKEditor
                     editor={ClassicEditor}
                     config={{
+                      licenseKey: 'GPL',
                       toolbar: {
                         items: ['undo', 'redo', '|', 'heading', '|', 'bold', 'italic', '|', 'link', 'bulletedList', 'numberedList', 'blockQuote']
                       },
