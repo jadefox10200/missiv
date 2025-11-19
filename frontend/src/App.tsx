@@ -290,7 +290,7 @@ function App() {
     // If switching from one inbox miv to another, mark previous as read
     if (isPreviousMivInInbox && isClickingDifferentMiv && activeDesk) {
       try {
-        await api.markMivAsRead(selectedMiv.id);
+        await api.markMivAsRead(selectedMiv.id, activeDesk.id);
         
         // Get sender name for toast
         const getSenderName = (deskId: string): string => {
@@ -323,7 +323,7 @@ function App() {
     // When clicking a miv in a basket, automatically mark it as read if it's incoming and unread
     if (miv.to === activeDesk?.id && !miv.read_at) {
       try {
-        await api.markMivAsRead(miv.id);
+        await api.markMivAsRead(miv.id, activeDesk.id);
         // Update the selected miv with read status
         const updatedMiv = { ...miv, read_at: new Date().toISOString() };
         setSelectedMiv(updatedMiv);

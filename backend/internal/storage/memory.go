@@ -438,22 +438,29 @@ func (s *MemoryStorage) UpdateConversationMiv(miv *models.ConversationMiv) error
 }
 
 // MarkConversationMivAsRead marks a specific miv as read
-func (s *MemoryStorage) MarkConversationMivAsRead(mivID string) error {
+func (s *MemoryStorage) MarkConversationMivAsRead(mivID string, deskID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	// Find the miv across all conversations
 	for _, mivs := range s.conversationMivs {
 		for i, miv := range mivs {
-			if miv.ID == mivID && miv.ReadAt == nil {
+			if miv.ID == mivID {
+				// Only mark as read if the miv is addressed to this desk
+				if miv.To != deskID {
+					return fmt.Errorf("miv not found or not addressed to this desk")
+				}
+				
+				// Mark as read and update state to PENDING
 				now := time.Now()
 				mivs[i].ReadAt = &now
+				mivs[i].State = models.StatePENDING
 				return nil
 			}
 		}
 	}
 
-	return fmt.Errorf("miv not found or already read: %s", mivID)
+	return fmt.Errorf("miv not found: %s", mivID)
 }
 
 // MarkConversationMivsAsRead marks all incoming unread mivs in a conversation as read for a specific desk
