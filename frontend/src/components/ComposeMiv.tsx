@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
-import { ClassicEditor, Bold, Essentials, Italic, Paragraph, Undo, Heading, Link, List, BlockQuote } from 'ckeditor5';
-import 'ckeditor5/ckeditor5.css';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { CreateMivRequest, Contact } from '../types';
 import * as api from '../api/client';
 import './ComposeMiv.css';
@@ -178,12 +177,11 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
           <label htmlFor="body">Message:</label>
           <div className="editor-container">
             <CKEditor
-              editor={ClassicEditor}
+              editor={ClassicEditor as any}
               config={{
                 toolbar: {
                   items: ['undo', 'redo', '|', 'heading', '|', 'bold', 'italic', '|', 'link', 'bulletedList', 'numberedList', 'blockQuote']
                 },
-                plugins: [Bold, Essentials, Italic, Paragraph, Undo, Heading, Link, List, BlockQuote],
                 heading: {
                   options: [
                     { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
