@@ -8,6 +8,7 @@ import MivDetailWithContext from './components/MivDetailWithContext';
 import NotificationPanel from './components/NotificationPanel';
 import ComposeMiv from './components/ComposeMiv';
 import ContactManager from './components/ContactManager';
+import Toast from './components/Toast';
 import {
   Account,
   Desk,
@@ -18,6 +19,7 @@ import {
   RegisterRequest,
   CreateMivRequest,
   MivState,
+  Contact,
 } from './types';
 import * as api from './api/client';
 import './App.css';
@@ -55,6 +57,10 @@ function App() {
   // Notification state
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Toast state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
 
   // Load saved session on mount
   useEffect(() => {
@@ -109,13 +115,15 @@ function App() {
       if (!activeDesk) return;
 
       try {
-        const [convResponse, notifResponse] = await Promise.all([
+        const [convResponse, notifResponse, contactsResponse] = await Promise.all([
           api.listConversations(activeDesk.id),
-          api.listNotifications(activeDesk.id, false)
+          api.listNotifications(activeDesk.id, false),
+          api.listContacts(activeDesk.id)
         ]);
         setConversations(convResponse.conversations || []);
         setNotifications(notifResponse.notifications || []);
         setUnreadCount(notifResponse.unread_count);
+        setContacts(contactsResponse.contacts || []);
         
         // Calculate basket counts
         await calculateBasketCounts(convResponse.conversations, activeDesk.id);
@@ -272,7 +280,46 @@ function App() {
   };
 
   const handleMivClick = async (miv: ConversationMiv) => {
+    // Check if we're switching from one inbox miv to another
+    const isPreviousMivInInbox = selectedMiv && 
+                                  selectedMiv.to === activeDesk?.id && 
+                                  !selectedMiv.read_at && 
+                                  selectedBasket === 'IN';
+    const isClickingDifferentMiv = selectedMiv && selectedMiv.id !== miv.id;
+
+    // If switching from one inbox miv to another, mark previous as read
+    if (isPreviousMivInInbox && isClickingDifferentMiv && activeDesk) {
+      try {
+        await api.markMivAsRead(selectedMiv.id);
+        
+        // Get sender name for toast
+        const getSenderName = (deskId: string): string => {
+          const contact = contacts.find((c) => c.desk_id_ref === deskId);
+          if (contact) return contact.name;
+          // Format as phone number
+          if (deskId.length === 10) {
+            return `${deskId.slice(0, 4)}-${deskId.slice(4, 6)}-${deskId.slice(6)}`;
+          }
+          return deskId;
+        };
+        
+        const senderName = getSenderName(selectedMiv.from);
+        setToastMessage(`Moved Miv from ${senderName} to Pending`);
+        
+        // Refresh basket counts and list after a short delay to ensure backend is updated
+        setTimeout(async () => {
+          setBasketRefreshKey(prev => prev + 1);
+          const response = await api.listConversations(activeDesk.id);
+          await calculateBasketCounts(response.conversations, activeDesk.id);
+        }, 100);
+      } catch (err) {
+        console.error('Failed to mark previous miv as read:', err);
+      }
+    }
+
+    // Set the newly selected miv
     setSelectedMiv(miv);
+    
     // When clicking a miv in a basket, automatically mark it as read if it's incoming and unread
     if (miv.to === activeDesk?.id && !miv.read_at) {
       try {
@@ -606,6 +653,12 @@ function App() {
           </>
         )}
       </div>
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          onClose={() => setToastMessage(null)}
+        />
+      )}
     </div>
   );
 }
