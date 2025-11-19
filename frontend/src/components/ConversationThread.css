@@ -53,6 +53,12 @@
   box-shadow: 0 2px 6px rgba(102, 126, 234, 0.12);
 }
 
+.message-inbox-item.selected {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+  background: #f0f4ff;
+}
+
 .message-inbox-header {
   display: flex;
   gap: 16px;

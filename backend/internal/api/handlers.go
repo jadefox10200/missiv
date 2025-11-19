@@ -567,6 +567,12 @@ func (s *Server) replyToConversation(c *gin.Context) {
 		s.storage.UpdateConversation(conv)
 	}
 
+	// If this is an ACK, archive the conversation for the sender
+	if req.IsAck {
+		conv.IsArchived = true
+		s.storage.UpdateConversation(conv)
+	}
+
 	// Create notification for recipient
 	notifType := models.NotificationTypeReply
 	message := fmt.Sprintf("Reply from %s in: %s", deskID, conv.Subject)
