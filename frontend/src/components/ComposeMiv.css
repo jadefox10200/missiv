@@ -169,3 +169,15 @@
 .btn-secondary:hover:not(:disabled) {
   background-color: #e0e0e0;
 }
+
+/* CKEditor container styling */
+.editor-container {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.editor-container .ck-editor__editable {
+  min-height: 300px;
+  max-height: 500px;
+}

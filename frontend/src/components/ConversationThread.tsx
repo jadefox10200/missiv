@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import { ClassicEditor, Bold, Essentials, Italic, Paragraph, Undo, Heading, Link, List, BlockQuote } from 'ckeditor5';
+import 'ckeditor5/ckeditor5.css';
 import { GetConversationResponse, Contact, ConversationMiv } from '../types';
 import * as api from '../api/client';
 import './ConversationThread.css';
@@ -178,9 +181,9 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
                 <span className="message-inbox-seq">#{miv.seq_no}</span>
               </div>
               
-              <div className="message-inbox-body">
+              <div className="message-inbox-body epistle-document">
                 {miv.is_ack && <span className="ack-badge">[ACK] </span>}
-                {atob(miv.body)}
+                <div className="epistle-content" dangerouslySetInnerHTML={{ __html: atob(miv.body) }} />
               </div>
 
               {miv.read_at && (
@@ -245,13 +248,31 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
               </div>
             ) : showReplyForm ? (
               <form onSubmit={handleReply} className="reply-form">
-                <textarea
-                  value={replyBody}
-                  onChange={(e) => setReplyBody(e.target.value)}
-                  placeholder="Type your reply..."
-                  rows={4}
-                  autoFocus
-                />
+                <div className="editor-container">
+                  <CKEditor
+                    editor={ClassicEditor}
+                    config={{
+                      toolbar: {
+                        items: ['undo', 'redo', '|', 'heading', '|', 'bold', 'italic', '|', 'link', 'bulletedList', 'numberedList', 'blockQuote']
+                      },
+                      plugins: [Bold, Essentials, Italic, Paragraph, Undo, Heading, Link, List, BlockQuote],
+                      heading: {
+                        options: [
+                          { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                          { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                          { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                          { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' }
+                        ]
+                      },
+                      placeholder: 'Type your reply...'
+                    }}
+                    data={replyBody}
+                    onChange={(event, editor) => {
+                      const data = editor.getData();
+                      setReplyBody(data);
+                    }}
+                  />
+                </div>
                 <div className="reply-actions">
                   <button type="submit" className="btn btn-primary">
                     Send Reply

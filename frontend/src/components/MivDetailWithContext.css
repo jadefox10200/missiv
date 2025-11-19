@@ -416,3 +416,114 @@
   text-transform: uppercase;
   font-style: normal;
 }
+
+/* Epistle-style document formatting */
+.epistle-document {
+  background: #fefefe;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 30px 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  font-family: 'Georgia', 'Times New Roman', serif;
+  line-height: 1.8;
+  color: #2c2c2c;
+}
+
+.epistle-content {
+  margin: 0;
+}
+
+/* Typography for epistle content */
+.epistle-content h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+  color: #1a1a1a;
+  border-bottom: 2px solid #333;
+  padding-bottom: 10px;
+  font-family: 'Georgia', serif;
+}
+
+.epistle-content h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 24px 0 16px 0;
+  color: #2c2c2c;
+  font-family: 'Georgia', serif;
+}
+
+.epistle-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 20px 0 12px 0;
+  color: #333;
+  font-family: 'Georgia', serif;
+}
+
+.epistle-content p {
+  margin: 0 0 16px 0;
+  text-align: justify;
+  font-size: 16px;
+  color: #2c2c2c;
+}
+
+.epistle-content p:last-child {
+  margin-bottom: 0;
+}
+
+.epistle-content strong {
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.epistle-content em {
+  font-style: italic;
+  color: #444;
+}
+
+.epistle-content a {
+  color: #0066cc;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.epistle-content a:hover {
+  color: #004499;
+}
+
+.epistle-content ul,
+.epistle-content ol {
+  margin: 16px 0 16px 30px;
+  padding: 0;
+}
+
+.epistle-content li {
+  margin-bottom: 8px;
+  line-height: 1.8;
+}
+
+.epistle-content blockquote {
+  margin: 20px 0;
+  padding: 15px 20px;
+  border-left: 4px solid #333;
+  background: #f5f5f5;
+  font-style: italic;
+  color: #555;
+}
+
+.epistle-content blockquote p {
+  margin: 0;
+}
+
+/* CKEditor container styling */
+.editor-container {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.editor-container .ck-editor__editable {
+  min-height: 200px;
+  max-height: 400px;
+}
