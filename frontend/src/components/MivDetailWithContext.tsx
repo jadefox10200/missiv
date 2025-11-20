@@ -298,63 +298,70 @@ function MivDetailWithContext({
 
       {/* Selected miv detail */}
       <div className="miv-detail-content">
-        <div className="miv-detail-header">
-          <div className="miv-meta-row">
-            <span className="miv-label">From:</span>
-            <span className="miv-value">
-              {selectedMiv.from === currentDeskId
-                ? "You"
-                : getDisplayName(selectedMiv.from)}
-            </span>
-            {selectedMiv.from !== currentDeskId &&
-              !isContact(selectedMiv.from) && (
-                <button
-                  className="btn-add-contact-inline"
-                  onClick={() => openAddContactModal(selectedMiv.from)}
-                  title="Add as contact"
-                >
-                  + Add Contact
-                </button>
-              )}
+        <div className="epistle-document">
+          {/* Epistle-style header with formal layout */}
+          <div className="epistle-header">
+            <div className="epistle-header-left">
+              <div className="epistle-field">
+                <span className="epistle-field-label">To:</span>
+                <span className="epistle-field-value">
+                  {selectedMiv.to === currentDeskId
+                    ? "You"
+                    : getDisplayName(selectedMiv.to)}
+                </span>
+                {selectedMiv.to !== currentDeskId && !isContact(selectedMiv.to) && (
+                  <button
+                    className="btn-add-contact-inline"
+                    onClick={() => openAddContactModal(selectedMiv.to)}
+                    title="Add as contact"
+                  >
+                    + Add Contact
+                  </button>
+                )}
+              </div>
+              <div className="epistle-field">
+                <span className="epistle-field-label">From:</span>
+                <span className="epistle-field-value">
+                  {selectedMiv.from === currentDeskId
+                    ? "You"
+                    : getDisplayName(selectedMiv.from)}
+                </span>
+                {selectedMiv.from !== currentDeskId &&
+                  !isContact(selectedMiv.from) && (
+                    <button
+                      className="btn-add-contact-inline"
+                      onClick={() => openAddContactModal(selectedMiv.from)}
+                      title="Add as contact"
+                    >
+                      + Add Contact
+                    </button>
+                  )}
+              </div>
+            </div>
+            <div className="epistle-header-right">
+              <div className="epistle-field">
+                <span className="epistle-field-value">
+                  {formatDate(selectedMiv.created_at)}
+                </span>
+              </div>
+              <div className="epistle-field epistle-sequence">
+                <span className="epistle-field-value">
+                  Message #{selectedMiv.seq_no}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="miv-meta-row">
-            <span className="miv-label">To:</span>
-            <span className="miv-value">
-              {selectedMiv.to === currentDeskId
-                ? "You"
-                : getDisplayName(selectedMiv.to)}
-            </span>
-            {selectedMiv.to !== currentDeskId && !isContact(selectedMiv.to) && (
-              <button
-                className="btn-add-contact-inline"
-                onClick={() => openAddContactModal(selectedMiv.to)}
-                title="Add as contact"
-              >
-                + Add Contact
-              </button>
-            )}
-          </div>
-          <div className="miv-meta-row">
-            <span className="miv-label">Date:</span>
-            <span className="miv-value">
-              {formatDate(selectedMiv.created_at)}
-            </span>
-          </div>
-          <div className="miv-meta-row">
-            <span className="miv-label">Sequence:</span>
-            <span className="miv-value">
-              #{selectedMiv.seq_no} in conversation
-            </span>
-          </div>
-        </div>
 
-        <div className="miv-subject-section">
-          <h2>{selectedMiv.subject}</h2>
-        </div>
+          {/* Centered subject */}
+          <div className="epistle-subject">
+            <h2>{selectedMiv.subject}</h2>
+          </div>
 
-        <div className="miv-body-section epistle-document">
-          {selectedMiv.is_ack && <span className="ack-badge">[ACK] </span>}
-          <div className="epistle-content" dangerouslySetInnerHTML={{ __html: atob(selectedMiv.body) }} />
+          {/* Body content */}
+          <div className="epistle-body">
+            {selectedMiv.is_ack && <span className="ack-badge">[ACK] </span>}
+            <div className="epistle-content" dangerouslySetInnerHTML={{ __html: atob(selectedMiv.body) }} />
+          </div>
         </div>
 
         <div className="miv-actions">
