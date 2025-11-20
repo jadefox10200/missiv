@@ -1,9 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import { 
+  ClassicEditor,
+  Bold,
+  Essentials,
+  Italic,
+  Paragraph,
+  Undo,
+  Heading,
+  Link,
+  List,
+  BlockQuote,
+  Underline,
+  Strikethrough,
+  Font,
+  Alignment,
+  Indent,
+  IndentBlock,
+  Image,
+  ImageCaption,
+  ImageStyle,
+  ImageToolbar,
+  ImageUpload,
+  ImageInsert,
+  Table,
+  TableToolbar,
+  RemoveFormat
+} from 'ckeditor5';
+import 'ckeditor5/ckeditor5.css';
 import { CreateMivRequest, Contact } from '../types';
 import * as api from '../api/client';
 import './ComposeMiv.css';
+
+// Configure CKEditor license for GPL use
+const CKEDITOR_LICENSE_KEY = 'GPL';
 
 interface ComposeMivProps {
   onSend: (request: CreateMivRequest) => Promise<void>;
@@ -177,8 +207,35 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
           <label htmlFor="body">Message:</label>
           <div className="editor-container">
             <CKEditor
-              editor={ClassicEditor as any}
+              editor={ClassicEditor}
               config={{
+                licenseKey: CKEDITOR_LICENSE_KEY,
+                plugins: [
+                  Essentials,
+                  Bold,
+                  Italic,
+                  Underline,
+                  Strikethrough,
+                  Paragraph,
+                  Heading,
+                  Font,
+                  Alignment,
+                  Link,
+                  List,
+                  Indent,
+                  IndentBlock,
+                  BlockQuote,
+                  Image,
+                  ImageCaption,
+                  ImageStyle,
+                  ImageToolbar,
+                  ImageUpload,
+                  ImageInsert,
+                  Table,
+                  TableToolbar,
+                  RemoveFormat,
+                  Undo
+                ],
                 toolbar: {
                   items: [
                     'undo', 'redo', '|',
