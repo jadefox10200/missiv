@@ -14,6 +14,9 @@ function ContactManager({ deskId }: ContactManagerProps) {
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [formData, setFormData] = useState({
     name: '',
+    first_name: '',
+    last_name: '',
+    greeting_name: '',
     desk_id_ref: '',
     notes: ''
   });
@@ -59,7 +62,7 @@ function ContactManager({ deskId }: ContactManagerProps) {
       }
       
       // Reset form and reload
-      setFormData({ name: '', desk_id_ref: '', notes: '' });
+      setFormData({ name: '', first_name: '', last_name: '', greeting_name: '', desk_id_ref: '', notes: '' });
       setShowForm(false);
       setEditingContact(null);
       await loadContacts();
@@ -73,6 +76,9 @@ function ContactManager({ deskId }: ContactManagerProps) {
     setEditingContact(contact);
     setFormData({
       name: contact.name,
+      first_name: contact.first_name || '',
+      last_name: contact.last_name || '',
+      greeting_name: contact.greeting_name || '',
       desk_id_ref: contact.desk_id_ref,
       notes: contact.notes
     });
@@ -94,7 +100,7 @@ function ContactManager({ deskId }: ContactManagerProps) {
   };
 
   const handleCancel = () => {
-    setFormData({ name: '', desk_id_ref: '', notes: '' });
+    setFormData({ name: '', first_name: '', last_name: '', greeting_name: '', desk_id_ref: '', notes: '' });
     setShowForm(false);
     setEditingContact(null);
   };
@@ -137,6 +143,40 @@ function ContactManager({ deskId }: ContactManagerProps) {
                   required
                   placeholder="John Doe"
                 />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="first_name">First Name</label>
+                <input
+                  id="first_name"
+                  type="text"
+                  value={formData.first_name}
+                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                  placeholder="John"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="last_name">Last Name</label>
+                <input
+                  id="last_name"
+                  type="text"
+                  value={formData.last_name}
+                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                  placeholder="Doe"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="greeting_name">Greeting Name</label>
+                <input
+                  id="greeting_name"
+                  type="text"
+                  value={formData.greeting_name}
+                  onChange={(e) => setFormData({ ...formData, greeting_name: e.target.value })}
+                  placeholder="John (used in salutations)"
+                />
+                <p className="help-text">Name to use in greetings (e.g., "John" or "Dr. Smith")</p>
               </div>
               
               <div className="form-group">

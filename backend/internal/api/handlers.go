@@ -806,10 +806,13 @@ func (s *Server) createContact(c *gin.Context) {
 	}
 
 	contact := &models.Contact{
-		DeskID:    deskID,
-		Name:      req.Name,
-		DeskIDRef: req.DeskIDRef,
-		Notes:     req.Notes,
+		DeskID:       deskID,
+		Name:         req.Name,
+		FirstName:    req.FirstName,
+		LastName:     req.LastName,
+		GreetingName: req.GreetingName,
+		DeskIDRef:    req.DeskIDRef,
+		Notes:        req.Notes,
 	}
 
 	if err := s.storage.CreateContact(contact); err != nil {
@@ -875,6 +878,15 @@ func (s *Server) updateContact(c *gin.Context) {
 	// Update fields
 	if req.Name != "" {
 		existing.Name = req.Name
+	}
+	if req.FirstName != "" {
+		existing.FirstName = req.FirstName
+	}
+	if req.LastName != "" {
+		existing.LastName = req.LastName
+	}
+	if req.GreetingName != "" {
+		existing.GreetingName = req.GreetingName
 	}
 	if req.DeskIDRef != "" {
 		existing.DeskIDRef = req.DeskIDRef
