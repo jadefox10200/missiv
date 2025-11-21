@@ -218,7 +218,7 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
                 >
                   {desk?.default_salutation && (
                     <div className="message-salutation">
-                      {desk.default_salutation.replace('[User]', isFromMe ? getGreetingName(miv.to) : 'you')}
+                      {desk.default_salutation.replace('[User]', isFromMe ? getGreetingName(miv.to) : (account?.display_name || 'you'))}
                     </div>
                   )}
                   <div 
