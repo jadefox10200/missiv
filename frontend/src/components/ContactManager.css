@@ -206,6 +206,13 @@
   resize: vertical;
 }
 
+.form-group .help-text {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;
