@@ -339,6 +339,9 @@ func (s *Server) updateDesk(c *gin.Context) {
 		return
 	}
 
+	// TODO: Add authorization check to verify user owns this desk
+	// This requires implementing proper authentication middleware
+
 	// Update fields if provided
 	if req.Name != nil {
 		desk.Name = *req.Name
