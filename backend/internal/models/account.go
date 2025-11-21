@@ -26,6 +26,13 @@ type Desk struct {
 	PublicKey string    `json:"public_key"` // Curve25519 public key (base64)
 	Name      string    `json:"name"`       // Display name for this desk
 	CreatedAt time.Time `json:"created_at"` // When the desk was created
+	
+	// Settings for miv rendering
+	AutoIndent         bool   `json:"auto_indent"`          // Enable auto-indent for epistle-style rendering
+	FontFamily         string `json:"font_family"`          // Default font family
+	FontSize           string `json:"font_size"`            // Default font size
+	DefaultSalutation  string `json:"default_salutation"`   // Default salutation (e.g., "Dear [User]")
+	DefaultClosure     string `json:"default_closure"`      // Default closure/signature
 }
 
 // RegisterRequest represents an account registration request
@@ -69,4 +76,14 @@ type RecoverPasswordRequest struct {
 	FirstPetName string `json:"first_pet_name" binding:"required"`
 	MotherMaiden string `json:"mother_maiden" binding:"required"`
 	NewPassword  string `json:"new_password" binding:"required,min=8"`
+}
+
+// UpdateDeskRequest represents a request to update desk settings
+type UpdateDeskRequest struct {
+	Name              *string `json:"name"`
+	AutoIndent        *bool   `json:"auto_indent"`
+	FontFamily        *string `json:"font_family"`
+	FontSize          *string `json:"font_size"`
+	DefaultSalutation *string `json:"default_salutation"`
+	DefaultClosure    *string `json:"default_closure"`
 }

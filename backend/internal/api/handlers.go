@@ -77,10 +77,15 @@ func (s *Server) registerAccount(c *gin.Context) {
 	}
 
 	desk := &models.Desk{
-		ID:        deskID,
-		AccountID: account.ID,
-		PublicKey: crypto.PublicKeyToBase64(keyPair.PublicKey),
-		Name:      "Primary Desk",
+		ID:                deskID,
+		AccountID:         account.ID,
+		PublicKey:         crypto.PublicKeyToBase64(keyPair.PublicKey),
+		Name:              "Primary Desk",
+		AutoIndent:        true,
+		FontFamily:        "Georgia, serif",
+		FontSize:          "14px",
+		DefaultSalutation: "Dear [User],",
+		DefaultClosure:    "Sincerely,",
 	}
 
 	if err := s.storage.CreateDesk(desk, keyPair.PrivateKey); err != nil {
@@ -245,10 +250,15 @@ func (s *Server) createDesk(c *gin.Context) {
 	}
 
 	desk := &models.Desk{
-		ID:        deskID,
-		AccountID: accountID,
-		PublicKey: crypto.PublicKeyToBase64(keyPair.PublicKey),
-		Name:      req.Name,
+		ID:                deskID,
+		AccountID:         accountID,
+		PublicKey:         crypto.PublicKeyToBase64(keyPair.PublicKey),
+		Name:              req.Name,
+		AutoIndent:        true,
+		FontFamily:        "Georgia, serif",
+		FontSize:          "14px",
+		DefaultSalutation: "Dear [User],",
+		DefaultClosure:    "Sincerely,",
 	}
 
 	if err := s.storage.CreateDesk(desk, keyPair.PrivateKey); err != nil {
@@ -307,6 +317,57 @@ func (s *Server) switchDesk(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, account)
+}
+
+func (s *Server) updateDesk(c *gin.Context) {
+	deskID := c.Param("desk_id")
+	if deskID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "desk_id is required"})
+		return
+	}
+
+	var req models.UpdateDeskRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get existing desk
+	desk, err := s.storage.GetDesk(deskID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Desk not found"})
+		return
+	}
+
+	// TODO: Add authorization check to verify user owns this desk
+	// This requires implementing proper authentication middleware
+
+	// Update fields if provided
+	if req.Name != nil {
+		desk.Name = *req.Name
+	}
+	if req.AutoIndent != nil {
+		desk.AutoIndent = *req.AutoIndent
+	}
+	if req.FontFamily != nil {
+		desk.FontFamily = *req.FontFamily
+	}
+	if req.FontSize != nil {
+		desk.FontSize = *req.FontSize
+	}
+	if req.DefaultSalutation != nil {
+		desk.DefaultSalutation = *req.DefaultSalutation
+	}
+	if req.DefaultClosure != nil {
+		desk.DefaultClosure = *req.DefaultClosure
+	}
+
+	if err := s.storage.UpdateDesk(desk); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update desk"})
+		return
+	}
+
+	c.JSON(http.StatusOK, desk)
 }
 
 // Conversation handlers

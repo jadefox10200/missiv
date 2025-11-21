@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-import { ConversationMiv, GetConversationResponse, Contact } from "../types";
+import { ConversationMiv, GetConversationResponse, Contact, Desk } from "../types";
 import * as api from "../api/client";
 import "./MivDetailWithContext.css";
 
 interface MivDetailWithContextProps {
   miv: ConversationMiv;
   currentDeskId: string;
+  currentDesk: Desk;
   onReply: (body: string, isAck?: boolean) => void;
   onForget?: () => void; // Callback when miv is forgotten
 }
@@ -15,6 +16,7 @@ interface MivDetailWithContextProps {
 function MivDetailWithContext({
   miv,
   currentDeskId,
+  currentDesk,
   onReply,
   onForget,
 }: MivDetailWithContextProps) {
@@ -358,9 +360,18 @@ function MivDetailWithContext({
           </div>
 
           {/* Body content */}
-          <div className="epistle-body">
+          <div 
+            className="epistle-body"
+            style={{
+              fontFamily: currentDesk?.font_family || 'Georgia, serif',
+              fontSize: currentDesk?.font_size || '14px'
+            }}
+          >
             {selectedMiv.is_ack && <span className="ack-badge">[ACK] </span>}
-            <div className="epistle-content" dangerouslySetInnerHTML={{ __html: atob(selectedMiv.body) }} />
+            <div 
+              className={`epistle-content ${currentDesk?.auto_indent ? 'auto-indent' : ''}`}
+              dangerouslySetInnerHTML={{ __html: atob(selectedMiv.body) }} 
+            />
           </div>
         </div>
 
@@ -514,8 +525,7 @@ function MivDetailWithContext({
                       'code', 'subscript', 'superscript', '|',
                       'link', 'insertTable', 'imageUpload', 'mediaEmbed', '|',
                       'bulletedList', 'numberedList', '|',
-                      'blockQuote', 'horizontalLine', '|',
-                      'outdent', 'indent'
+                      'blockQuote', 'horizontalLine'
                     ]
                   },
                   heading: {
