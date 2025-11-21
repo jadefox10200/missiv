@@ -314,6 +314,17 @@
   margin: 0;
 }
 
+.message-salutation {
+  margin-bottom: 20px;
+  line-height: 1.8;
+}
+
+.message-closure {
+  margin-top: 40px;
+  white-space: pre-line;
+  line-height: 1.8;
+}
+
 /* Typography for epistle content */
 .epistle-content h1 {
   font-size: 24px;
@@ -407,4 +418,146 @@
 .editor-container .ck-editor__editable {
   min-height: 200px;
   max-height: 400px;
+}
+
+/* Auto-indent paragraphs */
+.auto-indent p {
+  text-indent: 2em;
+  margin-bottom: 1em;
+}
+
+/* Preview button styling */
+.btn-preview {
+  background-color: #4a90e2;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-preview:hover:not(:disabled) {
+  background-color: #357abd;
+}
+
+.btn-preview:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Preview Modal */
+.preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.preview-modal {
+  background: white;
+  border-radius: 8px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.preview-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.close-button:hover {
+  color: #000;
+}
+
+.preview-content {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  background: #f9f9f9;
+}
+
+.epistle-preview {
+  background: white;
+  padding: 60px 80px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.preview-subject {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.preview-subject h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: normal;
+}
+
+.preview-salutation {
+  margin-bottom: 20px;
+  line-height: 1.8;
+}
+
+.preview-body {
+  line-height: 1.8;
+  margin-bottom: 30px;
+}
+
+.preview-body.auto-indent p {
+  text-indent: 2em;
+  margin-bottom: 1em;
+}
+
+.preview-closure {
+  margin-top: 40px;
+  white-space: pre-line;
+  line-height: 1.8;
+}
+
+.preview-actions {
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
 }

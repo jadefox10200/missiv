@@ -666,6 +666,7 @@ function App() {
                 <ConversationThread
                   conversation={selectedConversation}
                   currentDeskId={activeDesk.id}
+                  desk={activeDesk}
                   onReply={handleReply}
                 />
               ) : (

@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-import { GetConversationResponse, Contact, ConversationMiv } from '../types';
+import { GetConversationResponse, Contact, ConversationMiv, Desk } from '../types';
 import * as api from '../api/client';
 import './ConversationThread.css';
 
 interface ConversationThreadProps {
   conversation: GetConversationResponse;
   currentDeskId: string;
+  desk: Desk;
   onReply: (body: string, isAck?: boolean) => void;
   onArchive?: () => void;
 }
 
-function ConversationThread({ conversation, currentDeskId, onReply, onArchive }: ConversationThreadProps) {
+function ConversationThread({ conversation, currentDeskId, desk, onReply, onArchive }: ConversationThreadProps) {
   const [replyBody, setReplyBody] = useState('');
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showAckConfirm, setShowAckConfirm] = useState(false);
@@ -20,6 +21,7 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
   const [ackBody, setAckBody] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedMiv, setSelectedMiv] = useState<ConversationMiv | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     const loadContactsData = async () => {
@@ -107,6 +109,21 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
     return contact ? contact.name : formatDeskId(deskIdRef);
   };
 
+  const getRecipientDisplayForReply = () => {
+    if (!conversation || conversation.mivs.length === 0) return 'Recipient';
+    
+    // Find the other party in the conversation
+    for (const miv of conversation.mivs) {
+      if (miv.from !== currentDeskId) {
+        return getDisplayName(miv.from);
+      }
+      if (miv.to !== currentDeskId) {
+        return getDisplayName(miv.to);
+      }
+    }
+    return 'Recipient';
+  };
+
   if (!conversation) {
     return (
       <div className="conversation-thread empty">
@@ -182,7 +199,28 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
               
               <div className="message-inbox-body epistle-document">
                 {miv.is_ack && <span className="ack-badge">[ACK] </span>}
-                <div className="epistle-content" dangerouslySetInnerHTML={{ __html: atob(miv.body) }} />
+                <div 
+                  className="epistle-content"
+                  style={{
+                    fontFamily: desk?.font_family || 'Georgia, serif',
+                    fontSize: desk?.font_size || '14px'
+                  }}
+                >
+                  {desk?.default_salutation && (
+                    <div className="message-salutation">
+                      {desk.default_salutation.replace('[User]', isFromMe ? getDisplayName(miv.to) : 'you')}
+                    </div>
+                  )}
+                  <div 
+                    className={desk?.auto_indent ? 'auto-indent' : ''}
+                    dangerouslySetInnerHTML={{ __html: atob(miv.body) }} 
+                  />
+                  {desk?.default_closure && (
+                    <div className="message-closure">
+                      {desk.default_closure}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {miv.read_at && (
@@ -283,6 +321,14 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
                   <button type="submit" className="btn btn-primary">
                     Send Reply
                   </button>
+                  <button
+                    type="button"
+                    className="btn btn-preview"
+                    onClick={() => setShowPreview(true)}
+                    disabled={!replyBody.trim()}
+                  >
+                    👁️ Preview
+                  </button>
                   {!isLatestMivAck() && (
                     <button
                       type="button"
@@ -347,6 +393,49 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
           </>
         )}
       </div>
+
+      {showPreview && (
+        <div className="preview-overlay" onClick={() => setShowPreview(false)}>
+          <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="preview-header">
+              <h3>Reply Preview</h3>
+              <button className="close-button" onClick={() => setShowPreview(false)}>×</button>
+            </div>
+            <div className="preview-content">
+              <div 
+                className="epistle-preview" 
+                style={{
+                  fontFamily: desk?.font_family || 'Georgia, serif',
+                  fontSize: desk?.font_size || '14px'
+                }}
+              >
+                <div className="preview-subject">
+                  <h2>{conversation.conversation.subject}</h2>
+                </div>
+                {desk?.default_salutation && (
+                  <div className="preview-salutation">
+                    {desk.default_salutation.replace('[User]', getRecipientDisplayForReply())}
+                  </div>
+                )}
+                <div 
+                  className={`preview-body ${desk?.auto_indent ? 'auto-indent' : ''}`}
+                  dangerouslySetInnerHTML={{ __html: replyBody || '<p>(No message)</p>' }}
+                />
+                {desk?.default_closure && (
+                  <div className="preview-closure">
+                    {desk.default_closure}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="preview-actions">
+              <button className="btn btn-secondary" onClick={() => setShowPreview(false)}>
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
