@@ -180,7 +180,16 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
               editor={ClassicEditor as any}
               config={{
                 toolbar: {
-                  items: ['undo', 'redo', '|', 'heading', '|', 'bold', 'italic', '|', 'link', 'bulletedList', 'numberedList', 'blockQuote']
+                  items: [
+                    'undo', 'redo', '|',
+                    'heading', '|',
+                    'bold', 'italic', 'underline', 'strikethrough', '|',
+                    'code', 'subscript', 'superscript', '|',
+                    'link', 'insertTable', 'imageUpload', 'mediaEmbed', '|',
+                    'bulletedList', 'numberedList', '|',
+                    'blockQuote', 'horizontalLine', '|',
+                    'outdent', 'indent'
+                  ]
                 },
                 heading: {
                   options: [
