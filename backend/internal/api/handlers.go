@@ -879,15 +879,10 @@ func (s *Server) updateContact(c *gin.Context) {
 	if req.Name != "" {
 		existing.Name = req.Name
 	}
-	if req.FirstName != "" {
-		existing.FirstName = req.FirstName
-	}
-	if req.LastName != "" {
-		existing.LastName = req.LastName
-	}
-	if req.GreetingName != "" {
-		existing.GreetingName = req.GreetingName
-	}
+	// Always update optional fields to allow clearing
+	existing.FirstName = req.FirstName
+	existing.LastName = req.LastName
+	existing.GreetingName = req.GreetingName
 	if req.DeskIDRef != "" {
 		existing.DeskIDRef = req.DeskIDRef
 	}
