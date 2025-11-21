@@ -55,6 +55,7 @@ func (s *Server) setupRoutes() {
 		// Desk endpoints
 		api.GET("/desks", s.listDesks)
 		api.POST("/desks", s.createDesk)
+		api.PUT("/desks/:desk_id", s.updateDesk)
 		api.POST("/desks/switch", s.switchDesk)
 
 		// Conversation endpoints

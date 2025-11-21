@@ -283,6 +283,19 @@ func (s *MemoryStorage) ListDesksByAccount(accountID string) ([]*models.Desk, er
 	return result, nil
 }
 
+// UpdateDesk updates an existing desk
+func (s *MemoryStorage) UpdateDesk(desk *models.Desk) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.desks[desk.ID]; !exists {
+		return fmt.Errorf("desk not found: %s", desk.ID)
+	}
+
+	s.desks[desk.ID] = desk
+	return nil
+}
+
 // Conversation methods
 
 // CreateConversation creates a new conversation

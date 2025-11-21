@@ -259,8 +259,7 @@ function ConversationThread({ conversation, currentDeskId, onReply, onArchive }:
                           'code', 'subscript', 'superscript', '|',
                           'link', 'insertTable', 'imageUpload', 'mediaEmbed', '|',
                           'bulletedList', 'numberedList', '|',
-                          'blockQuote', 'horizontalLine', '|',
-                          'outdent', 'indent'
+                          'blockQuote', 'horizontalLine'
                         ]
                       },
                       heading: {

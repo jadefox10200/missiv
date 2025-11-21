@@ -49,6 +49,11 @@ export interface Desk {
   public_key: string;
   name: string;
   created_at: string;
+  auto_indent: boolean;
+  font_family: string;
+  font_size: string;
+  default_salutation: string;
+  default_closure: string;
 }
 
 export interface RegisterRequest {
@@ -76,6 +81,15 @@ export interface CreateDeskRequest {
 
 export interface SwitchDeskRequest {
   desk_id: string;
+}
+
+export interface UpdateDeskRequest {
+  name?: string;
+  auto_indent?: boolean;
+  font_family?: string;
+  font_size?: string;
+  default_salutation?: string;
+  default_closure?: string;
 }
 
 export interface RecoverPasswordRequest {

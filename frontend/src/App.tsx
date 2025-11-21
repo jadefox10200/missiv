@@ -8,6 +8,7 @@ import MivDetailWithContext from './components/MivDetailWithContext';
 import NotificationPanel from './components/NotificationPanel';
 import ComposeMiv from './components/ComposeMiv';
 import ContactManager from './components/ContactManager';
+import Settings from './components/Settings';
 import Toast from './components/Toast';
 import {
   Account,
@@ -24,7 +25,7 @@ import {
 import * as api from './api/client';
 import './App.css';
 
-type View = 'baskets' | 'conversations' | 'compose' | 'notifications' | 'contacts';
+type View = 'baskets' | 'conversations' | 'compose' | 'notifications' | 'contacts' | 'settings';
 
 function App() {
   // Authentication state
@@ -460,6 +461,14 @@ function App() {
     }
   };
 
+  const handleDeskUpdated = (updatedDesk: Desk) => {
+    // Update active desk with new settings
+    setActiveDesk(updatedDesk);
+    
+    // Update desks list
+    setDesks(desks.map(d => d.id === updatedDesk.id ? updatedDesk : d));
+  };
+
   if (loading) {
     return (
       <div className="app loading">
@@ -578,6 +587,13 @@ function App() {
         </nav>
 
         <div className="sidebar-footer">
+          <button 
+            onClick={() => setCurrentView('settings')} 
+            className="btn-settings"
+            title="Settings"
+          >
+            ⚙️ Settings
+          </button>
           <button onClick={handleLogout} className="btn-logout">
             Sign Out
           </button>
@@ -585,11 +601,18 @@ function App() {
       </div>
 
       <div className="main-content">
-        {currentView === 'compose' ? (
+        {currentView === 'settings' ? (
+          <Settings 
+            desk={activeDesk} 
+            onClose={() => setCurrentView('baskets')}
+            onDeskUpdated={handleDeskUpdated}
+          />
+        ) : currentView === 'compose' ? (
           <ComposeMiv
             onSend={handleSendConversation}
             onCancel={() => setCurrentView('baskets')}
             deskId={activeDesk.id}
+            desk={activeDesk}
           />
         ) : currentView === 'notifications' ? (
           <div className="notifications-view">
@@ -617,6 +640,7 @@ function App() {
                 <MivDetailWithContext
                   miv={selectedMiv}
                   currentDeskId={activeDesk.id}
+                  currentDesk={activeDesk}
                   onReply={handleMivReply}
                   onForget={handleMivForget}
                 />

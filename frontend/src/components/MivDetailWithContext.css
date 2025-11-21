@@ -535,6 +535,10 @@
   color: #2c2c2c;
 }
 
+.epistle-content.auto-indent p {
+  text-indent: 2em;
+}
+
 .epistle-content p:last-child {
   margin-bottom: 0;
 }

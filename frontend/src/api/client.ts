@@ -10,6 +10,7 @@ import {
   LoginResponse,
   CreateDeskRequest,
   SwitchDeskRequest,
+  UpdateDeskRequest,
   ListConversationsResponse,
   GetConversationResponse,
   CreateConversationRequest,
@@ -198,6 +199,20 @@ export const switchDesk = async (accountId: string, request: SwitchDeskRequest):
   });
   if (!response.ok) {
     throw new Error('Failed to switch desk');
+  }
+  return response.json();
+};
+
+export const updateDesk = async (deskId: string, request: UpdateDeskRequest): Promise<Desk> => {
+  const response = await fetch(`${API_BASE_URL}/desks/${deskId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update desk');
   }
   return response.json();
 };

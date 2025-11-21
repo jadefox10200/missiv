@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-import { CreateMivRequest, Contact } from '../types';
+import { CreateMivRequest, Contact, Desk } from '../types';
 import * as api from '../api/client';
 import './ComposeMiv.css';
 
@@ -9,9 +9,10 @@ interface ComposeMivProps {
   onSend: (request: CreateMivRequest) => Promise<void>;
   onCancel: () => void;
   deskId: string;
+  desk: Desk;
 }
 
-const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => {
+const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId, desk }) => {
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -20,6 +21,7 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [showContactDropdown, setShowContactDropdown] = useState(false);
   const [contactSearchTerm, setContactSearchTerm] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     const loadContacts = async () => {
@@ -187,8 +189,7 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
                     'code', 'subscript', 'superscript', '|',
                     'link', 'insertTable', 'imageUpload', 'mediaEmbed', '|',
                     'bulletedList', 'numberedList', '|',
-                    'blockQuote', 'horizontalLine', '|',
-                    'outdent', 'indent'
+                    'blockQuote', 'horizontalLine'
                   ]
                 },
                 heading: {
@@ -221,6 +222,14 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
             Cancel
           </button>
           <button
+            type="button"
+            onClick={() => setShowPreview(true)}
+            className="btn btn-preview"
+            disabled={isSending || !body}
+          >
+            👁️ Preview
+          </button>
+          <button
             type="submit"
             className="btn btn-primary"
             disabled={isSending}
@@ -229,6 +238,49 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({ onSend, onCancel, deskId }) => 
           </button>
         </div>
       </form>
+
+      {showPreview && (
+        <div className="preview-overlay" onClick={() => setShowPreview(false)}>
+          <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="preview-header">
+              <h3>Message Preview</h3>
+              <button className="close-button" onClick={() => setShowPreview(false)}>×</button>
+            </div>
+            <div className="preview-content">
+              <div 
+                className="epistle-preview" 
+                style={{
+                  fontFamily: desk?.font_family || 'Georgia, serif',
+                  fontSize: desk?.font_size || '14px'
+                }}
+              >
+                <div className="preview-subject">
+                  <h2>{subject || '(No subject)'}</h2>
+                </div>
+                {desk?.default_salutation && (
+                  <div className="preview-salutation">
+                    {desk.default_salutation.replace('[User]', getRecipientDisplay() || 'Recipient')}
+                  </div>
+                )}
+                <div 
+                  className={`preview-body ${desk?.auto_indent ? 'auto-indent' : ''}`}
+                  dangerouslySetInnerHTML={{ __html: body || '<p>(No message)</p>' }}
+                />
+                {desk?.default_closure && (
+                  <div className="preview-closure">
+                    {desk.default_closure}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="preview-actions">
+              <button className="btn btn-secondary" onClick={() => setShowPreview(false)}>
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
