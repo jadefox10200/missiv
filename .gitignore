@@ -12,6 +12,7 @@ vendor/
 
 # Backend build
 backend/missiv
+backend/missiv-server
 backend/tmp/
 
 # Frontend
@@ -49,3 +50,8 @@ data/
 # Temp files
 /tmp/
 backend/backend
+
+# Uploads
+uploads/
+backend/uploads/
+frontend/uploads/

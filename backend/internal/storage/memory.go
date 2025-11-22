@@ -463,7 +463,7 @@ func (s *MemoryStorage) MarkConversationMivAsRead(mivID string, deskID string) e
 				if miv.To != deskID {
 					return fmt.Errorf("miv not found or not addressed to this desk")
 				}
-				
+
 				// Mark as read and update state to PENDING
 				now := time.Now()
 				mivs[i].ReadAt = &now

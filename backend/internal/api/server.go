@@ -80,6 +80,9 @@ func (s *Server) setupRoutes() {
 		api.PUT("/contacts/:contact_id", s.updateContact)
 		api.DELETE("/contacts/:contact_id", s.deleteContact)
 
+		// Upload endpoint
+		api.POST("/upload", s.uploadFile)
+
 		// Legacy Identity endpoints (for backward compatibility)
 		api.GET("/identity", s.getIdentity)
 		api.POST("/identity", s.createIdentity)
@@ -103,6 +106,9 @@ func (s *Server) setupRoutes() {
 	s.router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	// Serve uploaded files
+	s.router.Static("/uploads", "./uploads")
 }
 
 // Run starts the API server
