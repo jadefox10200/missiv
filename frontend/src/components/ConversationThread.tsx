@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import { ImageResize } from '@ckeditor/ckeditor5-image';
 import { GetConversationResponse, Contact, ConversationMiv, Desk, Account } from '../types';
 import * as api from '../api/client';
 import { uploadPlugin } from '../utils/ckEditorUploadAdapter';
@@ -301,7 +302,7 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
                   <CKEditor
                     editor={ClassicEditor as any}
                     config={{
-                      extraPlugins: [uploadPlugin],
+                      extraPlugins: [uploadPlugin, ImageResize],
                       toolbar: {
                         items: [
                           'undo', 'redo', '|',
@@ -313,6 +314,15 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
                           'blockQuote', 'horizontalLine'
                         ]
                       },
+                      image: {
+                        toolbar: [
+                          'imageStyle:alignLeft',
+                          'imageStyle:alignCenter',
+                          'imageStyle:alignRight',
+                          '|',
+                          'resizeImage'
+                        ]
+                      },
                       heading: {
                         options: [
                           { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
@@ -322,7 +332,7 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
                         ]
                       },
                       placeholder: 'Type your reply...'
-                    }}
+                    } as any}
                     data={replyBody}
                     onChange={(event, editor) => {
                       const data = editor.getData();
