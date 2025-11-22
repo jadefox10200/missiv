@@ -68,6 +68,13 @@ go build -o missiv
 ./missiv
 ```
 
+For production deployments, set the `SERVER_URL` environment variable to the full server URL (e.g., `https://example.com`) to ensure uploaded file URLs are generated correctly:
+
+```bash
+export SERVER_URL=https://example.com
+./missiv
+```
+
 #### Frontend
 
 ```bash
@@ -76,6 +83,13 @@ npm run build
 ```
 
 The production build will be available in `frontend/build/`.
+
+### Environment Variables
+
+The backend supports the following environment variables:
+
+- `SERVER_URL`: Full server URL for generating file upload URLs (e.g., `https://example.com`). If not set, the server will attempt to detect the URL from the request (development only).
+- `UPLOAD_DIR`: Directory for storing uploaded files (default: `./uploads`)
 
 ## API Endpoints
 
