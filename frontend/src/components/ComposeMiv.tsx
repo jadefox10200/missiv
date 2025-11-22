@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import { ImageResize } from "@ckeditor/ckeditor5-image";
 import { CreateMivRequest, Contact, Desk } from "../types";
 import * as api from "../api/client";
 import { uploadPlugin } from "../utils/ckEditorUploadAdapter";
@@ -221,7 +222,7 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({
             <CKEditor
               editor={ClassicEditor as any}
               config={{
-                extraPlugins: [uploadPlugin],
+                extraPlugins: [uploadPlugin, ImageResize],
                 toolbar: {
                   items: [
                     "undo",
@@ -248,6 +249,15 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({
                     "|",
                     "blockQuote",
                     "horizontalLine",
+                  ],
+                },
+                image: {
+                  toolbar: [
+                    "imageStyle:alignLeft",
+                    "imageStyle:alignCenter",
+                    "imageStyle:alignRight",
+                    "|",
+                    "resizeImage",
                   ],
                 },
                 heading: {
@@ -278,7 +288,7 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({
                   ],
                 },
                 placeholder: "Enter your message...",
-              }}
+              } as any}
               data={body}
               disabled={isSending}
               onChange={(event, editor) => {
