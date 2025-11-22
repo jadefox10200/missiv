@@ -1,10 +1,15 @@
 package api
 
 import (
+	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -910,11 +915,12 @@ func (s *Server) deleteContact(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-// Upload handler
+// Upload handler - Production implementation
 func (s *Server) uploadFile(c *gin.Context) {
 	// Get the file from the request
 	file, err := c.FormFile("upload")
 	if err != nil {
+		log.Printf("Upload error: No file in request - %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
 		return
 	}
@@ -922,21 +928,24 @@ func (s *Server) uploadFile(c *gin.Context) {
 	// Validate file size (limit to 10MB)
 	const maxFileSize = 10 * 1024 * 1024 // 10MB
 	if file.Size > maxFileSize {
+		log.Printf("Upload error: File too large - %d bytes (max: %d)", file.Size, maxFileSize)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File too large. Maximum size is 10MB"})
 		return
 	}
 
 	// Validate file type (only images)
 	contentType := file.Header.Get("Content-Type")
-	allowedTypes := map[string]bool{
-		"image/jpeg": true,
-		"image/jpg":  true,
-		"image/png":  true,
-		"image/gif":  true,
-		"image/webp": true,
+	allowedTypes := map[string]string{
+		"image/jpeg": ".jpg",
+		"image/jpg":  ".jpg",
+		"image/png":  ".png",
+		"image/gif":  ".gif",
+		"image/webp": ".webp",
 	}
 
-	if !allowedTypes[contentType] {
+	expectedExt, validContentType := allowedTypes[contentType]
+	if !validContentType {
+		log.Printf("Upload error: Invalid content type - %s", contentType)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file type. Only images are allowed"})
 		return
 	}
@@ -945,6 +954,7 @@ func (s *Server) uploadFile(c *gin.Context) {
 	// Open the file to read the first few bytes
 	fileContent, err := file.Open()
 	if err != nil {
+		log.Printf("Upload error: Failed to open file - %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file"})
 		return
 	}
@@ -954,53 +964,72 @@ func (s *Server) uploadFile(c *gin.Context) {
 	buffer := make([]byte, 512)
 	_, err = fileContent.Read(buffer)
 	if err != nil {
+		log.Printf("Upload error: Failed to read file header - %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file header"})
 		return
 	}
 
 	// Validate magic bytes for common image formats
 	isValidImage := false
+	detectedExt := ""
+	
 	// JPEG: FF D8 FF
 	if len(buffer) >= 3 && buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF {
 		isValidImage = true
+		detectedExt = ".jpg"
 	}
 	// PNG: 89 50 4E 47
 	if len(buffer) >= 4 && buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47 {
 		isValidImage = true
+		detectedExt = ".png"
 	}
 	// GIF: 47 49 46
 	if len(buffer) >= 3 && buffer[0] == 0x47 && buffer[1] == 0x49 && buffer[2] == 0x46 {
 		isValidImage = true
+		detectedExt = ".gif"
 	}
 	// WebP: 52 49 46 46 (RIFF) with "WEBP" at offset 8
 	if len(buffer) >= 12 && buffer[0] == 0x52 && buffer[1] == 0x49 && buffer[2] == 0x46 && buffer[3] == 0x46 &&
 		buffer[8] == 0x57 && buffer[9] == 0x45 && buffer[10] == 0x42 && buffer[11] == 0x50 {
 		isValidImage = true
+		detectedExt = ".webp"
 	}
 
 	if !isValidImage {
+		log.Printf("Upload error: File magic bytes do not match any supported image format")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File is not a valid image"})
 		return
 	}
 
-	// In a production environment, you would:
-	// 1. Save the file to a persistent storage (S3, local disk, etc.)
-	// 2. Generate a unique filename
-	// 3. Store metadata in database
-	// 4. Return the URL where the file can be accessed
-
-	// For this implementation, we'll use a simple approach:
-	// Save to a static directory that can be served by the web server
+	// Validate that the detected file type matches the declared content type
+	if detectedExt != expectedExt {
+		log.Printf("Upload error: Content-Type mismatch - declared: %s (%s), detected: %s", 
+			contentType, expectedExt, detectedExt)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File type mismatch. The file content does not match the declared type"})
+		return
+	}
 
 	// Sanitize the original filename to prevent path traversal attacks
-	// Remove directory separators and special characters
-	sanitizedFilename := file.Filename
-	sanitizedFilename = strings.ReplaceAll(sanitizedFilename, "/", "_")
-	sanitizedFilename = strings.ReplaceAll(sanitizedFilename, "\\", "_")
-	sanitizedFilename = strings.ReplaceAll(sanitizedFilename, "..", "_")
+	// Use a whitelist approach: only allow alphanumeric, dash, underscore, and dot
+	sanitizedFilename := sanitizeFilename(file.Filename)
+	
+	// Extract and validate the file extension
+	ext := filepath.Ext(sanitizedFilename)
+	if ext == "" || len(ext) > 10 {
+		// If no extension or suspicious extension, use the detected one
+		ext = detectedExt
+	}
 
-	// Generate unique filename using timestamp and sanitized original filename
-	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), sanitizedFilename)
+	// Generate cryptographically secure unique filename
+	uniqueID, err := generateUniqueID()
+	if err != nil {
+		log.Printf("Upload error: Failed to generate unique ID - %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate unique filename"})
+		return
+	}
+
+	// Construct filename: uniqueID + timestamp + extension
+	filename := fmt.Sprintf("%s_%d%s", uniqueID, time.Now().Unix(), ext)
 
 	// Define upload directory (configurable via environment variable)
 	uploadDir := os.Getenv("UPLOAD_DIR")
@@ -1010,22 +1039,89 @@ func (s *Server) uploadFile(c *gin.Context) {
 
 	// Create uploads directory if it doesn't exist
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		log.Printf("Upload error: Failed to create upload directory - %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
 		return
 	}
 
+	// Use filepath.Join for safe path construction
+	filePath := filepath.Join(uploadDir, filename)
+	
+	// Additional security: Ensure the final path is still within the upload directory
+	absUploadDir, err := filepath.Abs(uploadDir)
+	if err != nil {
+		log.Printf("Upload error: Failed to get absolute path of upload directory - %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	
+	absFilePath, err := filepath.Abs(filePath)
+	if err != nil {
+		log.Printf("Upload error: Failed to get absolute path of file - %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	
+	if !strings.HasPrefix(absFilePath, absUploadDir) {
+		log.Printf("Upload error: Path traversal attempt detected - file path outside upload directory")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid filename"})
+		return
+	}
+
 	// Save the file
-	filepath := fmt.Sprintf("%s/%s", uploadDir, filename)
-	if err := c.SaveUploadedFile(file, filepath); err != nil {
+	if err := c.SaveUploadedFile(file, filePath); err != nil {
+		log.Printf("Upload error: Failed to save file - %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
 		return
 	}
 
 	// Return the URL where the file can be accessed
-	// In production, this would be a full URL or CDN path
 	fileURL := fmt.Sprintf("/uploads/%s", filename)
+	
+	log.Printf("File uploaded successfully: %s (size: %d bytes, type: %s)", filename, file.Size, contentType)
 
 	c.JSON(http.StatusOK, gin.H{
 		"url": fileURL,
 	})
+}
+
+// sanitizeFilename removes potentially dangerous characters from filenames
+// Only allows alphanumeric characters, dots, hyphens, and underscores
+func sanitizeFilename(filename string) string {
+	// Remove any path components
+	filename = filepath.Base(filename)
+	
+	// Replace spaces with underscores
+	filename = strings.ReplaceAll(filename, " ", "_")
+	
+	// Use regex to keep only safe characters: alphanumeric, dot, hyphen, underscore
+	reg := regexp.MustCompile(`[^a-zA-Z0-9._-]`)
+	filename = reg.ReplaceAllString(filename, "")
+	
+	// Prevent filenames that start with a dot (hidden files)
+	if strings.HasPrefix(filename, ".") {
+		filename = "file" + filename
+	}
+	
+	// Limit filename length
+	const maxFilenameLength = 100
+	if len(filename) > maxFilenameLength {
+		ext := filepath.Ext(filename)
+		nameWithoutExt := strings.TrimSuffix(filename, ext)
+		if len(nameWithoutExt) > maxFilenameLength-len(ext) {
+			nameWithoutExt = nameWithoutExt[:maxFilenameLength-len(ext)]
+		}
+		filename = nameWithoutExt + ext
+	}
+	
+	return filename
+}
+
+// generateUniqueID creates a cryptographically secure random identifier
+func generateUniqueID() (string, error) {
+	bytes := make([]byte, 16) // 128 bits of randomness
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }
