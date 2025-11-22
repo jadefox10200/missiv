@@ -15,7 +15,26 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
   const [fontFamily, setFontFamily] = useState(desk.font_family || 'Georgia, serif');
   const [fontSize, setFontSize] = useState(desk.font_size || '14px');
   const [defaultSalutation, setDefaultSalutation] = useState(desk.default_salutation || 'Dear [User],');
-  const [defaultClosure, setDefaultClosure] = useState(desk.default_closure || 'Sincerely,');
+  
+  // Parse closure and signature from default_closure
+  const parseClosureAndSignature = (closureStr: string) => {
+    // Split by double newline to separate closure from signature
+    const parts = closureStr.split('\n\n');
+    if (parts.length >= 2) {
+      return { closure: parts[0], signature: parts.slice(1).join('\n\n') };
+    }
+    // If no double newline, treat first line as closure, rest as signature
+    const lines = closureStr.split('\n');
+    if (lines.length >= 2) {
+      return { closure: lines[0], signature: lines.slice(1).join('\n') };
+    }
+    return { closure: closureStr, signature: '' };
+  };
+  
+  const initialParsed = parseClosureAndSignature(desk.default_closure || 'Sincerely,');
+  const [closure, setClosure] = useState(initialParsed.closure);
+  const [signature, setSignature] = useState(initialParsed.signature);
+  
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -27,13 +46,18 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
     setSuccessMessage(null);
 
     try {
+      // Combine closure and signature with double newline separator
+      const combinedClosure = signature 
+        ? `${closure}\n\n${signature}`
+        : closure;
+
       const request: UpdateDeskRequest = {
         name: deskName,
         auto_indent: autoIndent,
         font_family: fontFamily,
         font_size: fontSize,
         default_salutation: defaultSalutation,
-        default_closure: defaultClosure,
+        default_closure: combinedClosure,
       };
 
       const updatedDesk = await api.updateDesk(desk.id, request);
@@ -148,16 +172,29 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
             </div>
 
             <div className="form-group">
-              <label htmlFor="defaultClosure">Default Closure/Signature</label>
-              <textarea
-                id="defaultClosure"
-                value={defaultClosure}
-                onChange={(e) => setDefaultClosure(e.target.value)}
-                placeholder="e.g., Sincerely,&#10;Your Name"
-                rows={3}
+              <label htmlFor="closure">Default Closure</label>
+              <input
+                id="closure"
+                type="text"
+                value={closure}
+                onChange={(e) => setClosure(e.target.value)}
+                placeholder="e.g., Best Regards,"
                 disabled={isSaving}
               />
-              <p className="help-text">This will be added at the end of your messages</p>
+              <p className="help-text">The closing phrase for your messages (e.g., "Sincerely,", "Best Regards,")</p>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="signature">Default Signature</label>
+              <textarea
+                id="signature"
+                value={signature}
+                onChange={(e) => setSignature(e.target.value)}
+                placeholder="e.g., Your Name&#10;Your Title&#10;Your Address"
+                rows={4}
+                disabled={isSaving}
+              />
+              <p className="help-text">Your signature block (name, title, contact info, etc.)</p>
             </div>
           </div>
 
