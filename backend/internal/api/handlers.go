@@ -1089,9 +1089,13 @@ func (s *Server) uploadFile(c *gin.Context) {
 
 	// Return the full URL where the file can be accessed
 	// Get server URL from environment or use default
+	// Note: For production deployments, SERVER_URL should be set to prevent
+	// Host header injection attacks. The Host header fallback is only for development.
 	serverURL := os.Getenv("SERVER_URL")
 	if serverURL == "" {
-		// Construct from request or use default
+		// Construct from request or use default (development only)
+		// WARNING: In production, always set SERVER_URL environment variable
+		// to avoid potential Host header injection vulnerabilities
 		scheme := "http"
 		if c.Request.TLS != nil {
 			scheme = "https"
