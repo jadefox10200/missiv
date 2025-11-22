@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -99,18 +100,22 @@ func TestUploadFile_ReturnsFullURL(t *testing.T) {
 	}
 
 	// Check that URL is present
-	url, ok := response["url"].(string)
+	urlStr, ok := response["url"].(string)
 	if !ok {
 		t.Fatalf("Expected 'url' field in response, got: %v", response)
 	}
 
 	// Verify URL format includes full server URL
-	if !strings.HasPrefix(url, "http://localhost:8080/uploads/") {
-		t.Errorf("Expected URL to start with 'http://localhost:8080/uploads/', got: %s", url)
+	if !strings.HasPrefix(urlStr, "http://localhost:8080/uploads/") {
+		t.Errorf("Expected URL to start with 'http://localhost:8080/uploads/', got: %s", urlStr)
 	}
 
 	// Verify the file was actually saved
-	filename := filepath.Base(url[len("http://localhost:8080/uploads/"):])
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		t.Fatalf("Failed to parse URL: %v", err)
+	}
+	filename := filepath.Base(parsedURL.Path)
 	savedPath := filepath.Join(tmpDir, filename)
 	if _, err := os.Stat(savedPath); os.IsNotExist(err) {
 		t.Errorf("Expected file to be saved at %s, but it doesn't exist", savedPath)
@@ -160,13 +165,13 @@ func TestUploadFile_WithServerURLEnv(t *testing.T) {
 	}
 
 	// Check that URL is present
-	url, ok := response["url"].(string)
+	urlStr, ok := response["url"].(string)
 	if !ok {
 		t.Fatalf("Expected 'url' field in response, got: %v", response)
 	}
 
 	// Verify URL uses the SERVER_URL environment variable
-	if !strings.HasPrefix(url, "https://example.com/uploads/") {
-		t.Errorf("Expected URL to start with 'https://example.com/uploads/', got: %s", url)
+	if !strings.HasPrefix(urlStr, "https://example.com/uploads/") {
+		t.Errorf("Expected URL to start with 'https://example.com/uploads/', got: %s", urlStr)
 	}
 }
