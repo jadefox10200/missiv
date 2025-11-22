@@ -33,8 +33,8 @@ class UploadAdapter {
 
   private _initRequest() {
     const xhr = (this.xhr = new XMLHttpRequest());
-    // Assuming the upload endpoint is at /api/upload
-    xhr.open("POST", "/api/upload", true);
+    // Upload endpoint at the full backend URL
+    xhr.open("POST", "http://localhost:8080/api/upload", true);
     xhr.responseType = "json";
   }
 
