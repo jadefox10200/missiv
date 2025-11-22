@@ -3,6 +3,7 @@ import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { GetConversationResponse, Contact, ConversationMiv, Desk, Account } from '../types';
 import * as api from '../api/client';
+import { buildMessageWithTemplate } from '../utils/messageTemplate';
 import './ConversationThread.css';
 
 interface ConversationThreadProps {
@@ -23,6 +24,7 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedMiv, setSelectedMiv] = useState<ConversationMiv | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [replyTemplateInitialized, setReplyTemplateInitialized] = useState(false);
 
   useEffect(() => {
     const loadContactsData = async () => {
@@ -37,12 +39,40 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
     loadContactsData();
   }, [currentDeskId]);
 
+  // Auto-insert salutation and signature when reply form is shown
+  useEffect(() => {
+    const shouldInitializeReplyTemplate = 
+      showReplyForm && !replyTemplateInitialized && contacts.length > 0 && conversation;
+    
+    if (shouldInitializeReplyTemplate) {
+      // Get the recipient (who we're replying to - the other party in conversation)
+      const latestMiv = conversation.mivs[conversation.mivs.length - 1];
+      const recipient = latestMiv.from === currentDeskId ? latestMiv.to : latestMiv.from;
+      
+      const initialTemplate = buildMessageWithTemplate(
+        desk.default_salutation || '',
+        recipient,
+        contacts,
+        desk.default_closure || '',
+        '<p><br></p>' // Empty paragraph for typing
+      );
+      setReplyBody(initialTemplate);
+      setReplyTemplateInitialized(true);
+    }
+    
+    // Reset template flag when reply form is hidden
+    if (!showReplyForm) {
+      setReplyTemplateInitialized(false);
+    }
+  }, [showReplyForm, replyTemplateInitialized, contacts, conversation, currentDeskId, desk.default_salutation, desk.default_closure]);
+
   const handleReply = (e: React.FormEvent) => {
     e.preventDefault();
     if (replyBody.trim()) {
       onReply(replyBody.trim(), false);
       setReplyBody('');
       setShowReplyForm(false);
+      setReplyTemplateInitialized(false);
     }
   };
 
@@ -328,6 +358,7 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
                     onClick={() => {
                       setShowReplyForm(false);
                       setReplyBody('');
+                      setReplyTemplateInitialized(false);
                     }}
                   >
                     Cancel
