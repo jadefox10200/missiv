@@ -3,6 +3,7 @@ import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { ConversationMiv, GetConversationResponse, Contact, Desk } from "../types";
 import * as api from "../api/client";
+import { uploadPlugin } from "../utils/ckEditorUploadAdapter";
 import "./MivDetailWithContext.css";
 
 interface MivDetailWithContextProps {
@@ -516,6 +517,7 @@ function MivDetailWithContext({
               <CKEditor
                 editor={ClassicEditor as any}
                 config={{
+                  extraPlugins: [uploadPlugin],
                   toolbar: {
                     items: [
                       'undo', 'redo', '|',

@@ -4,7 +4,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"os"
 	"sort"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jadefox10200/missiv/backend/internal/crypto"
@@ -905,4 +907,72 @@ func (s *Server) deleteContact(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusNoContent, nil)
+}
+
+// Upload handler
+func (s *Server) uploadFile(c *gin.Context) {
+	// Get the file from the request
+	file, err := c.FormFile("upload")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
+		return
+	}
+
+	// Validate file size (limit to 10MB)
+	const maxFileSize = 10 * 1024 * 1024 // 10MB
+	if file.Size > maxFileSize {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File too large. Maximum size is 10MB"})
+		return
+	}
+
+	// Validate file type (only images)
+	contentType := file.Header.Get("Content-Type")
+	allowedTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/jpg":  true,
+		"image/png":  true,
+		"image/gif":  true,
+		"image/webp": true,
+	}
+
+	if !allowedTypes[contentType] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file type. Only images are allowed"})
+		return
+	}
+
+	// In a production environment, you would:
+	// 1. Save the file to a persistent storage (S3, local disk, etc.)
+	// 2. Generate a unique filename
+	// 3. Store metadata in database
+	// 4. Return the URL where the file can be accessed
+	
+	// For this implementation, we'll use a simple approach:
+	// Save to a static directory that can be served by the web server
+	
+	// Generate unique filename using timestamp and original filename
+	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
+	
+	// Define upload directory
+	uploadDir := "./uploads"
+	
+	// Create uploads directory if it doesn't exist
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
+		return
+	}
+	
+	// Save the file
+	filepath := fmt.Sprintf("%s/%s", uploadDir, filename)
+	if err := c.SaveUploadedFile(file, filepath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
+		return
+	}
+
+	// Return the URL where the file can be accessed
+	// In production, this would be a full URL or CDN path
+	fileURL := fmt.Sprintf("/uploads/%s", filename)
+	
+	c.JSON(http.StatusOK, gin.H{
+		"url": fileURL,
+	})
 }

@@ -3,6 +3,7 @@ import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { GetConversationResponse, Contact, ConversationMiv, Desk, Account } from '../types';
 import * as api from '../api/client';
+import { uploadPlugin } from '../utils/ckEditorUploadAdapter';
 import './ConversationThread.css';
 
 interface ConversationThreadProps {
@@ -270,6 +271,7 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
                   <CKEditor
                     editor={ClassicEditor as any}
                     config={{
+                      extraPlugins: [uploadPlugin],
                       toolbar: {
                         items: [
                           'undo', 'redo', '|',
