@@ -6,6 +6,10 @@
  * CKEditor types that are not properly exported in the build-classic package.
  */
 
+// Use the same base URL as the rest of the API, but construct the full upload URL
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+const UPLOAD_URL = `${API_BASE_URL}/upload`;
+
 class UploadAdapter {
   private loader: any; // CKEditor FileLoader - type not exported
   private xhr: XMLHttpRequest | null = null;
@@ -33,8 +37,8 @@ class UploadAdapter {
 
   private _initRequest() {
     const xhr = (this.xhr = new XMLHttpRequest());
-    // Assuming the upload endpoint is at /api/upload
-    xhr.open("POST", "/api/upload", true);
+    // Upload to the configured backend URL
+    xhr.open("POST", UPLOAD_URL, true);
     xhr.responseType = "json";
   }
 
