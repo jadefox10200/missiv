@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Desk, UpdateDeskRequest } from '../types';
 import * as api from '../api/client';
+import { parseClosureAndSignature } from '../utils/messageTemplate';
 import './Settings.css';
 
 interface SettingsProps {
@@ -17,20 +18,6 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
   const [defaultSalutation, setDefaultSalutation] = useState(desk.default_salutation || 'Dear [User],');
   
   // Parse closure and signature from default_closure
-  const parseClosureAndSignature = (closureStr: string) => {
-    // Split by double newline to separate closure from signature
-    const parts = closureStr.split('\n\n');
-    if (parts.length >= 2) {
-      return { closure: parts[0], signature: parts.slice(1).join('\n\n') };
-    }
-    // If no double newline, treat first line as closure, rest as signature
-    const lines = closureStr.split('\n');
-    if (lines.length >= 2) {
-      return { closure: lines[0], signature: lines.slice(1).join('\n') };
-    }
-    return { closure: closureStr, signature: '' };
-  };
-  
   const initialParsed = parseClosureAndSignature(desk.default_closure || 'Sincerely,');
   const [closure, setClosure] = useState(initialParsed.closure);
   const [signature, setSignature] = useState(initialParsed.signature);

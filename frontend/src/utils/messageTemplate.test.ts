@@ -1,4 +1,4 @@
-import { buildSalutation, buildSignature, buildMessageWithTemplate } from './messageTemplate';
+import { buildSalutation, buildSignature, buildMessageWithTemplate, parseClosureAndSignature } from './messageTemplate';
 import { Contact } from '../types';
 
 describe('messageTemplate utilities', () => {
@@ -26,6 +26,32 @@ describe('messageTemplate utilities', () => {
       updated_at: '2024-01-01T00:00:00Z',
     },
   ];
+
+  describe('parseClosureAndSignature', () => {
+    it('should parse closure and signature with double newline separator', () => {
+      const result = parseClosureAndSignature('Best Regards,\n\nJohn Doe\nCEO');
+      expect(result.closure).toBe('Best Regards,');
+      expect(result.signature).toBe('John Doe\nCEO');
+    });
+
+    it('should parse closure and signature with single newline separator', () => {
+      const result = parseClosureAndSignature('Sincerely,\nJohn Doe');
+      expect(result.closure).toBe('Sincerely,');
+      expect(result.signature).toBe('John Doe');
+    });
+
+    it('should handle single line (no signature)', () => {
+      const result = parseClosureAndSignature('Best Regards,');
+      expect(result.closure).toBe('Best Regards,');
+      expect(result.signature).toBe('');
+    });
+
+    it('should handle empty string', () => {
+      const result = parseClosureAndSignature('');
+      expect(result.closure).toBe('');
+      expect(result.signature).toBe('');
+    });
+  });
 
   describe('buildSalutation', () => {
     it('should replace [User] with greeting_name when available', () => {

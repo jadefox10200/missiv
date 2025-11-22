@@ -41,7 +41,10 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
 
   // Auto-insert salutation and signature when reply form is shown
   useEffect(() => {
-    if (showReplyForm && !replyTemplateInitialized && contacts.length > 0 && conversation) {
+    const shouldInitializeReplyTemplate = 
+      showReplyForm && !replyTemplateInitialized && contacts.length > 0 && conversation;
+    
+    if (shouldInitializeReplyTemplate) {
       // Get the recipient (who we're replying to - the other party in conversation)
       const latestMiv = conversation.mivs[conversation.mivs.length - 1];
       const recipient = latestMiv.from === currentDeskId ? latestMiv.to : latestMiv.from;

@@ -1,6 +1,31 @@
 import { Contact } from '../types';
 
 /**
+ * Parse closure and signature from combined string
+ * @param closureStr - Combined closure and signature string
+ * @returns Object with separate closure and signature
+ */
+export function parseClosureAndSignature(closureStr: string): { closure: string; signature: string } {
+  if (!closureStr) {
+    return { closure: '', signature: '' };
+  }
+  
+  // Split by double newline to separate closure from signature
+  const parts = closureStr.split('\n\n');
+  if (parts.length >= 2) {
+    return { closure: parts[0], signature: parts.slice(1).join('\n\n') };
+  }
+  
+  // If no double newline, treat first line as closure, rest as signature
+  const lines = closureStr.split('\n');
+  if (lines.length >= 2) {
+    return { closure: lines[0], signature: lines.slice(1).join('\n') };
+  }
+  
+  return { closure: closureStr, signature: '' };
+}
+
+/**
  * Build a salutation string with the recipient's greeting name
  * @param salutationTemplate - Template string (e.g., "Dear [User],")
  * @param recipient - The contact or desk ID
@@ -42,31 +67,16 @@ export function buildSignature(closureStr: string): string {
     return '';
   }
 
-  // Split by double newline to separate closure from signature
-  const parts = closureStr.split('\n\n');
+  const { closure, signature } = parseClosureAndSignature(closureStr);
   
-  if (parts.length >= 2) {
-    const closure = parts[0];
-    const signature = parts.slice(1).join('\n\n');
-    
+  if (signature) {
     // Convert newlines to <br> tags in signature
     const signatureHtml = signature.split('\n').map(line => line.trim()).filter(line => line).join('<br>');
-    
     return `<p>${closure}</p><p>${signatureHtml}</p>`;
   }
   
-  // If no double newline separator, treat as before
-  const lines = closureStr.split('\n');
-  if (lines.length >= 2) {
-    const closure = lines[0];
-    const signatureLines = lines.slice(1);
-    const signatureHtml = signatureLines.map(line => line.trim()).filter(line => line).join('<br>');
-    
-    return `<p>${closure}</p><p>${signatureHtml}</p>`;
-  }
-  
-  // Single line - just the closure
-  return `<p>${closureStr}</p>`;
+  // Only closure, no signature
+  return `<p>${closure}</p>`;
 }
 
 /**
@@ -88,7 +98,11 @@ export function buildMessageWithTemplate(
   const salutation = buildSalutation(salutationTemplate, recipient, contacts);
   const signature = buildSignature(closureStr);
   
-  // Combine parts with the body content in between
-  const parts = [salutation, bodyContent, signature].filter(part => part);
+  // Combine parts with proper spacing
+  const parts = [];
+  if (salutation) parts.push(salutation);
+  if (bodyContent) parts.push(bodyContent);
+  if (signature) parts.push(signature);
+  
   return parts.join('');
 }
