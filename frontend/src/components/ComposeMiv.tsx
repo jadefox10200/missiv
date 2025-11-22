@@ -4,6 +4,7 @@ import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import { CreateMivRequest, Contact, Desk } from "../types";
 import * as api from "../api/client";
 import { uploadPlugin } from "../utils/ckEditorUploadAdapter";
+import { buildMessageWithTemplate } from "../utils/messageTemplate";
 import "./ComposeMiv.css";
 
 interface ComposeMivProps {
@@ -28,6 +29,7 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({
   const [showContactDropdown, setShowContactDropdown] = useState(false);
   const [contactSearchTerm, setContactSearchTerm] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [templateInitialized, setTemplateInitialized] = useState(false);
 
   useEffect(() => {
     const loadContacts = async () => {
@@ -41,6 +43,26 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({
 
     loadContacts();
   }, [deskId]);
+
+  // Auto-insert salutation and signature when recipient is selected
+  useEffect(() => {
+    if (to && contacts.length > 0 && !templateInitialized) {
+      const initialTemplate = buildMessageWithTemplate(
+        desk.default_salutation || '',
+        to,
+        contacts,
+        desk.default_closure || '',
+        '<p><br></p>' // Empty paragraph for typing
+      );
+      setBody(initialTemplate);
+      setTemplateInitialized(true);
+    }
+  }, [to, contacts, desk.default_salutation, desk.default_closure, templateInitialized]);
+
+  // Reset template flag when recipient changes
+  useEffect(() => {
+    setTemplateInitialized(false);
+  }, [to]);
 
   const filteredContacts = contacts.filter(
     (contact) =>
@@ -77,6 +99,8 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({
       setTo("");
       setSubject("");
       setBody("");
+      setTemplateInitialized(false);
+      setContactSearchTerm("");
     } catch (err) {
       setError("Failed to send miv. Please try again.");
     } finally {
