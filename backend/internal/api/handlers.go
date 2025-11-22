@@ -1087,8 +1087,27 @@ func (s *Server) uploadFile(c *gin.Context) {
 		return
 	}
 
-	// Return the URL where the file can be accessed
-	fileURL := fmt.Sprintf("/uploads/%s", filename)
+	// Return the full URL where the file can be accessed
+	// Get server URL from environment or use default
+	// Note: For production deployments, SERVER_URL should be set to prevent
+	// Host header injection attacks. The Host header fallback is only for development.
+	serverURL := os.Getenv("SERVER_URL")
+	if serverURL == "" {
+		// Construct from request or use default (development only)
+		// WARNING: In production, always set SERVER_URL environment variable
+		// to avoid potential Host header injection vulnerabilities
+		scheme := "http"
+		if c.Request.TLS != nil {
+			scheme = "https"
+		}
+		host := c.Request.Host
+		if host == "" {
+			host = "localhost:8080"
+		}
+		serverURL = fmt.Sprintf("%s://%s", scheme, host)
+	}
+	
+	fileURL := fmt.Sprintf("%s/uploads/%s", serverURL, filename)
 	
 	log.Printf("File uploaded successfully: %s (size: %d bytes, type: %s)", filename, file.Size, contentType)
 
