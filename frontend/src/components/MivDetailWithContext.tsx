@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-import { ImageResize } from '@ckeditor/ckeditor5-image';
+import { ImageResize, ImageStyle } from '@ckeditor/ckeditor5-image';
 import { ConversationMiv, GetConversationResponse, Contact, Desk } from "../types";
 import * as api from "../api/client";
 import { uploadPlugin } from "../utils/ckEditorUploadAdapter";
@@ -518,7 +518,7 @@ function MivDetailWithContext({
               <CKEditor
                 editor={ClassicEditor as any}
                 config={{
-                  extraPlugins: [uploadPlugin, ImageResize],
+                  extraPlugins: [uploadPlugin, ImageResize, ImageStyle],
                   toolbar: {
                     items: [
                       'undo', 'redo', '|',
