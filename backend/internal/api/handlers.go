@@ -19,6 +19,16 @@ import (
 	"github.com/jadefox10200/missiv/backend/internal/models"
 )
 
+// Upload handler constants
+const (
+	maxFileSize         = 10 * 1024 * 1024 // 10MB
+	maxFileExtLength    = 10               // Maximum length for file extension
+	maxFilenameLength   = 100              // Maximum length for sanitized filename
+)
+
+// Compiled regex for filename sanitization (compiled once at package level)
+var safeFilenameRegex = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
+
 // Account handlers
 
 func (s *Server) registerAccount(c *gin.Context) {
@@ -926,7 +936,6 @@ func (s *Server) uploadFile(c *gin.Context) {
 	}
 
 	// Validate file size (limit to 10MB)
-	const maxFileSize = 10 * 1024 * 1024 // 10MB
 	if file.Size > maxFileSize {
 		log.Printf("Upload error: File too large - %d bytes (max: %d)", file.Size, maxFileSize)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File too large. Maximum size is 10MB"})
@@ -951,6 +960,9 @@ func (s *Server) uploadFile(c *gin.Context) {
 	}
 
 	// Additional security: Validate file signature (magic bytes)
+	// Note: This validates the file header but does not protect against polyglot files
+	// (files with valid image headers but malicious payloads). For higher security,
+	// consider re-encoding images or using a dedicated image validation library.
 	// Open the file to read the first few bytes
 	fileContent, err := file.Open()
 	if err != nil {
@@ -1015,7 +1027,7 @@ func (s *Server) uploadFile(c *gin.Context) {
 	
 	// Extract and validate the file extension
 	ext := filepath.Ext(sanitizedFilename)
-	if ext == "" || len(ext) > 10 {
+	if ext == "" || len(ext) > maxFileExtLength {
 		// If no extension or suspicious extension, use the detected one
 		ext = detectedExt
 	}
@@ -1094,17 +1106,15 @@ func sanitizeFilename(filename string) string {
 	// Replace spaces with underscores
 	filename = strings.ReplaceAll(filename, " ", "_")
 	
-	// Use regex to keep only safe characters: alphanumeric, dot, hyphen, underscore
-	reg := regexp.MustCompile(`[^a-zA-Z0-9._-]`)
-	filename = reg.ReplaceAllString(filename, "")
+	// Use package-level regex to keep only safe characters: alphanumeric, dot, hyphen, underscore
+	filename = safeFilenameRegex.ReplaceAllString(filename, "")
 	
 	// Prevent filenames that start with a dot (hidden files)
 	if strings.HasPrefix(filename, ".") {
 		filename = "file" + filename
 	}
 	
-	// Limit filename length
-	const maxFilenameLength = 100
+	// Limit filename length using package-level constant
 	if len(filename) > maxFilenameLength {
 		ext := filepath.Ext(filename)
 		nameWithoutExt := strings.TrimSuffix(filename, ext)
