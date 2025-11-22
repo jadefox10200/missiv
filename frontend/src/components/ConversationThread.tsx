@@ -107,31 +107,11 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
 
   const getDisplayName = (deskIdRef: string) => {
     const contact = contacts.find(c => c.desk_id_ref === deskIdRef);
-    return contact ? contact.name : formatDeskId(deskIdRef);
-  };
-
-  const getGreetingName = (deskIdRef: string) => {
-    const contact = contacts.find(c => c.desk_id_ref === deskIdRef);
-    if (contact && contact.greeting_name) {
-      return contact.greeting_name;
+    const formattedId = formatDeskId(deskIdRef);
+    if (contact) {
+      return `${contact.name} @ ${formattedId}`;
     }
-    // Fallback to contact name or formatted desk ID
-    return contact ? contact.name : formatDeskId(deskIdRef);
-  };
-
-  const getRecipientGreetingNameForReply = () => {
-    if (!conversation || conversation.mivs.length === 0) return 'You';
-    
-    // Find the other party in the conversation
-    for (const miv of conversation.mivs) {
-      if (miv.from !== currentDeskId) {
-        return getGreetingName(miv.from);
-      }
-      if (miv.to !== currentDeskId) {
-        return getGreetingName(miv.to);
-      }
-    }
-    return 'You';
+    return formattedId;
   };
 
   if (!conversation) {
@@ -209,6 +189,7 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
               
               <div className="message-inbox-body epistle-document">
                 {miv.is_ack && <span className="ack-badge">[ACK] </span>}
+                {/* Message body only - salutations and closures are not displayed */}
                 <div 
                   className="epistle-content"
                   style={{
@@ -216,20 +197,10 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
                     fontSize: desk?.font_size || '14px'
                   }}
                 >
-                  {desk?.default_salutation && (
-                    <div className="message-salutation">
-                      {desk.default_salutation.replace('[User]', isFromMe ? getGreetingName(miv.to) : (account?.display_name || 'you'))}
-                    </div>
-                  )}
                   <div 
                     className={desk?.auto_indent ? 'auto-indent' : ''}
                     dangerouslySetInnerHTML={{ __html: atob(miv.body) }} 
                   />
-                  {desk?.default_closure && (
-                    <div className="message-closure">
-                      {desk.default_closure}
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -422,23 +393,10 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
                 <div className="preview-subject">
                   <h2>{conversation.conversation.subject}</h2>
                 </div>
-                {desk?.default_salutation && (
-                  <div className="preview-salutation">
-                    {desk.default_salutation.replace('[User]', getRecipientGreetingNameForReply())}
-                  </div>
-                )}
                 <div 
                   className={`preview-body ${desk?.auto_indent ? 'auto-indent' : ''}`}
                   dangerouslySetInnerHTML={{ __html: replyBody || '<p>(No message)</p>' }}
                 />
-                {desk?.default_closure && (
-                  <div className="preview-closure">
-                    {desk.default_closure}
-                    {account?.display_name && (
-                      <div>{account.display_name}</div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
             <div className="preview-actions">

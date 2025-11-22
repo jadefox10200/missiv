@@ -122,7 +122,11 @@ function BasketView({
 
   const getDisplayName = (deskIdRef: string) => {
     const contact = contacts.find((c) => c.desk_id_ref === deskIdRef);
-    return contact ? contact.name : formatPhoneId(deskIdRef);
+    const formattedId = formatPhoneId(deskIdRef);
+    if (contact) {
+      return `${contact.name} @ ${formattedId}`;
+    }
+    return formattedId;
   };
 
   const getConversationPartner = (conv: ConversationWithLatest) => {
