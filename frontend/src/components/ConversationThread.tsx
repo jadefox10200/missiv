@@ -189,6 +189,7 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
               
               <div className="message-inbox-body epistle-document">
                 {miv.is_ack && <span className="ack-badge">[ACK] </span>}
+                {/* Message body only - salutations and closures are not displayed */}
                 <div 
                   className="epistle-content"
                   style={{
