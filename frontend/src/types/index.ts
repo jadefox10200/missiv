@@ -183,6 +183,9 @@ export interface Contact {
   id: string;
   desk_id: string;
   name: string;
+  first_name?: string;
+  last_name?: string;
+  greeting_name?: string;
   desk_id_ref: string;
   notes: string;
   created_at: string;
@@ -191,12 +194,18 @@ export interface Contact {
 
 export interface CreateContactRequest {
   name: string;
+  first_name?: string;
+  last_name?: string;
+  greeting_name?: string;
   desk_id_ref: string;
   notes?: string;
 }
 
 export interface UpdateContactRequest {
   name?: string;
+  first_name?: string;
+  last_name?: string;
+  greeting_name?: string;
   desk_id_ref?: string;
   notes?: string;
 }

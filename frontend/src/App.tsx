@@ -667,6 +667,7 @@ function App() {
                   conversation={selectedConversation}
                   currentDeskId={activeDesk.id}
                   desk={activeDesk}
+                  account={account || undefined}
                   onReply={handleReply}
                 />
               ) : (

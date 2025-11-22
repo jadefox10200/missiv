@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-import { GetConversationResponse, Contact, ConversationMiv, Desk } from '../types';
+import { GetConversationResponse, Contact, ConversationMiv, Desk, Account } from '../types';
 import * as api from '../api/client';
 import './ConversationThread.css';
 
@@ -9,11 +9,12 @@ interface ConversationThreadProps {
   conversation: GetConversationResponse;
   currentDeskId: string;
   desk: Desk;
+  account?: Account;
   onReply: (body: string, isAck?: boolean) => void;
   onArchive?: () => void;
 }
 
-function ConversationThread({ conversation, currentDeskId, desk, onReply, onArchive }: ConversationThreadProps) {
+function ConversationThread({ conversation, currentDeskId, desk, account, onReply, onArchive }: ConversationThreadProps) {
   const [replyBody, setReplyBody] = useState('');
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showAckConfirm, setShowAckConfirm] = useState(false);
@@ -109,19 +110,28 @@ function ConversationThread({ conversation, currentDeskId, desk, onReply, onArch
     return contact ? contact.name : formatDeskId(deskIdRef);
   };
 
-  const getRecipientDisplayForReply = () => {
-    if (!conversation || conversation.mivs.length === 0) return 'Recipient';
+  const getGreetingName = (deskIdRef: string) => {
+    const contact = contacts.find(c => c.desk_id_ref === deskIdRef);
+    if (contact && contact.greeting_name) {
+      return contact.greeting_name;
+    }
+    // Fallback to contact name or formatted desk ID
+    return contact ? contact.name : formatDeskId(deskIdRef);
+  };
+
+  const getRecipientGreetingNameForReply = () => {
+    if (!conversation || conversation.mivs.length === 0) return 'You';
     
     // Find the other party in the conversation
     for (const miv of conversation.mivs) {
       if (miv.from !== currentDeskId) {
-        return getDisplayName(miv.from);
+        return getGreetingName(miv.from);
       }
       if (miv.to !== currentDeskId) {
-        return getDisplayName(miv.to);
+        return getGreetingName(miv.to);
       }
     }
-    return 'Recipient';
+    return 'You';
   };
 
   if (!conversation) {
@@ -208,7 +218,7 @@ function ConversationThread({ conversation, currentDeskId, desk, onReply, onArch
                 >
                   {desk?.default_salutation && (
                     <div className="message-salutation">
-                      {desk.default_salutation.replace('[User]', isFromMe ? getDisplayName(miv.to) : 'you')}
+                      {desk.default_salutation.replace('[User]', isFromMe ? getGreetingName(miv.to) : (account?.display_name || 'you'))}
                     </div>
                   )}
                   <div 
@@ -414,7 +424,7 @@ function ConversationThread({ conversation, currentDeskId, desk, onReply, onArch
                 </div>
                 {desk?.default_salutation && (
                   <div className="preview-salutation">
-                    {desk.default_salutation.replace('[User]', getRecipientDisplayForReply())}
+                    {desk.default_salutation.replace('[User]', getRecipientGreetingNameForReply())}
                   </div>
                 )}
                 <div 
@@ -424,6 +434,9 @@ function ConversationThread({ conversation, currentDeskId, desk, onReply, onArch
                 {desk?.default_closure && (
                   <div className="preview-closure">
                     {desk.default_closure}
+                    {account?.display_name && (
+                      <div>{account.display_name}</div>
+                    )}
                   </div>
                 )}
               </div>
