@@ -221,7 +221,11 @@ function MivDetailWithContext({
 
   const getDisplayName = (deskIdRef: string) => {
     const contact = contacts.find((c) => c.desk_id_ref === deskIdRef);
-    return contact ? contact.name : formatPhoneId(deskIdRef);
+    const formattedId = formatPhoneId(deskIdRef);
+    if (contact) {
+      return `${contact.name} @ ${formattedId}`;
+    }
+    return formattedId;
   };
 
   const isContact = (deskIdRef: string) => {
@@ -307,11 +311,9 @@ function MivDetailWithContext({
               <div className="epistle-field">
                 <span className="epistle-field-label">To:</span>
                 <span className="epistle-field-value">
-                  {selectedMiv.to === currentDeskId
-                    ? "You"
-                    : getDisplayName(selectedMiv.to)}
+                  {getDisplayName(selectedMiv.to)}
                 </span>
-                {selectedMiv.to !== currentDeskId && !isContact(selectedMiv.to) && (
+                {!isContact(selectedMiv.to) && (
                   <button
                     className="btn-add-contact-inline"
                     onClick={() => openAddContactModal(selectedMiv.to)}
@@ -324,20 +326,17 @@ function MivDetailWithContext({
               <div className="epistle-field">
                 <span className="epistle-field-label">From:</span>
                 <span className="epistle-field-value">
-                  {selectedMiv.from === currentDeskId
-                    ? "You"
-                    : getDisplayName(selectedMiv.from)}
+                  {getDisplayName(selectedMiv.from)}
                 </span>
-                {selectedMiv.from !== currentDeskId &&
-                  !isContact(selectedMiv.from) && (
-                    <button
-                      className="btn-add-contact-inline"
-                      onClick={() => openAddContactModal(selectedMiv.from)}
-                      title="Add as contact"
-                    >
-                      + Add Contact
-                    </button>
-                  )}
+                {!isContact(selectedMiv.from) && (
+                  <button
+                    className="btn-add-contact-inline"
+                    onClick={() => openAddContactModal(selectedMiv.from)}
+                    title="Add as contact"
+                  >
+                    + Add Contact
+                  </button>
+                )}
               </div>
             </div>
             <div className="epistle-header-right">
