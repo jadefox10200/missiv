@@ -945,22 +945,22 @@ func (s *Server) uploadFile(c *gin.Context) {
 	// 2. Generate a unique filename
 	// 3. Store metadata in database
 	// 4. Return the URL where the file can be accessed
-	
+
 	// For this implementation, we'll use a simple approach:
 	// Save to a static directory that can be served by the web server
-	
+
 	// Generate unique filename using timestamp and original filename
 	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
-	
+
 	// Define upload directory
 	uploadDir := "./uploads"
-	
+
 	// Create uploads directory if it doesn't exist
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
 		return
 	}
-	
+
 	// Save the file
 	filepath := fmt.Sprintf("%s/%s", uploadDir, filename)
 	if err := c.SaveUploadedFile(file, filepath); err != nil {
@@ -971,7 +971,7 @@ func (s *Server) uploadFile(c *gin.Context) {
 	// Return the URL where the file can be accessed
 	// In production, this would be a full URL or CDN path
 	fileURL := fmt.Sprintf("/uploads/%s", filename)
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"url": fileURL,
 	})
