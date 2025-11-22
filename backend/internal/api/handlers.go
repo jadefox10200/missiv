@@ -1087,8 +1087,23 @@ func (s *Server) uploadFile(c *gin.Context) {
 		return
 	}
 
-	// Return the URL where the file can be accessed
-	fileURL := fmt.Sprintf("/uploads/%s", filename)
+	// Return the full URL where the file can be accessed
+	// Get server URL from environment or use default
+	serverURL := os.Getenv("SERVER_URL")
+	if serverURL == "" {
+		// Construct from request or use default
+		scheme := "http"
+		if c.Request.TLS != nil {
+			scheme = "https"
+		}
+		host := c.Request.Host
+		if host == "" {
+			host = "localhost:8080"
+		}
+		serverURL = fmt.Sprintf("%s://%s", scheme, host)
+	}
+	
+	fileURL := fmt.Sprintf("%s/uploads/%s", serverURL, filename)
 	
 	log.Printf("File uploaded successfully: %s (size: %d bytes, type: %s)", filename, file.Size, contentType)
 
