@@ -1,10 +1,13 @@
 /**
  * Custom upload adapter for CKEditor 5
  * Handles image uploads to the server via /api/upload endpoint
+ * 
+ * Note: Uses 'any' types for CKEditor loader and editor as these are internal
+ * CKEditor types that are not properly exported in the build-classic package.
  */
 
 class UploadAdapter {
-  private loader: any;
+  private loader: any; // CKEditor FileLoader - type not exported
   private xhr: XMLHttpRequest | null = null;
 
   constructor(loader: any) {
@@ -85,6 +88,8 @@ class UploadAdapter {
  *   extraPlugins: [uploadPlugin],
  *   ...
  * }}
+ * 
+ * @param editor - CKEditor ClassicEditor instance (type not exported from build-classic)
  */
 export function uploadPlugin(editor: any) {
   editor.plugins.get("FileRepository").createUploadAdapter = (loader: any) => {

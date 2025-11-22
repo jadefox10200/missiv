@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -940,6 +941,48 @@ func (s *Server) uploadFile(c *gin.Context) {
 		return
 	}
 
+	// Additional security: Validate file signature (magic bytes)
+	// Open the file to read the first few bytes
+	fileContent, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file"})
+		return
+	}
+	defer fileContent.Close()
+
+	// Read the first 512 bytes for magic number validation
+	buffer := make([]byte, 512)
+	_, err = fileContent.Read(buffer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file header"})
+		return
+	}
+
+	// Validate magic bytes for common image formats
+	isValidImage := false
+	// JPEG: FF D8 FF
+	if len(buffer) >= 3 && buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF {
+		isValidImage = true
+	}
+	// PNG: 89 50 4E 47
+	if len(buffer) >= 4 && buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47 {
+		isValidImage = true
+	}
+	// GIF: 47 49 46
+	if len(buffer) >= 3 && buffer[0] == 0x47 && buffer[1] == 0x49 && buffer[2] == 0x46 {
+		isValidImage = true
+	}
+	// WebP: 52 49 46 46 (RIFF) with "WEBP" at offset 8
+	if len(buffer) >= 12 && buffer[0] == 0x52 && buffer[1] == 0x49 && buffer[2] == 0x46 && buffer[3] == 0x46 &&
+		buffer[8] == 0x57 && buffer[9] == 0x45 && buffer[10] == 0x42 && buffer[11] == 0x50 {
+		isValidImage = true
+	}
+
+	if !isValidImage {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File is not a valid image"})
+		return
+	}
+
 	// In a production environment, you would:
 	// 1. Save the file to a persistent storage (S3, local disk, etc.)
 	// 2. Generate a unique filename
@@ -949,11 +992,21 @@ func (s *Server) uploadFile(c *gin.Context) {
 	// For this implementation, we'll use a simple approach:
 	// Save to a static directory that can be served by the web server
 
-	// Generate unique filename using timestamp and original filename
-	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
+	// Sanitize the original filename to prevent path traversal attacks
+	// Remove directory separators and special characters
+	sanitizedFilename := file.Filename
+	sanitizedFilename = strings.ReplaceAll(sanitizedFilename, "/", "_")
+	sanitizedFilename = strings.ReplaceAll(sanitizedFilename, "\\", "_")
+	sanitizedFilename = strings.ReplaceAll(sanitizedFilename, "..", "_")
 
-	// Define upload directory
-	uploadDir := "./uploads"
+	// Generate unique filename using timestamp and sanitized original filename
+	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), sanitizedFilename)
+
+	// Define upload directory (configurable via environment variable)
+	uploadDir := os.Getenv("UPLOAD_DIR")
+	if uploadDir == "" {
+		uploadDir = "./uploads"
+	}
 
 	// Create uploads directory if it doesn't exist
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
