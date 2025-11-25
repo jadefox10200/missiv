@@ -49,16 +49,22 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({
   useEffect(() => {
     if (to && contacts.length > 0 && !templateInitialized) {
       const initialTemplate = buildMessageWithTemplate(
-        desk.default_salutation || '',
+        desk.default_salutation || "",
         to,
         contacts,
-        desk.default_closure || '',
-        '<p><br></p>' // Empty paragraph for typing
+        desk.default_closure || "",
+        "<p><br></p>" // Empty paragraph for typing
       );
       setBody(initialTemplate);
       setTemplateInitialized(true);
     }
-  }, [to, contacts, desk.default_salutation, desk.default_closure, templateInitialized]);
+  }, [
+    to,
+    contacts,
+    desk.default_salutation,
+    desk.default_closure,
+    templateInitialized,
+  ]);
 
   // Reset template flag when recipient changes
   useEffect(() => {
@@ -221,74 +227,76 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({
           <div className="editor-container">
             <CKEditor
               editor={ClassicEditor as any}
-              config={{
-                extraPlugins: [uploadPlugin, ImageResize, ImageStyle],
-                toolbar: {
-                  items: [
-                    "undo",
-                    "redo",
-                    "|",
-                    "heading",
-                    "|",
-                    "bold",
-                    "italic",
-                    "underline",
-                    "strikethrough",
-                    "|",
-                    "code",
-                    "subscript",
-                    "superscript",
-                    "|",
-                    "link",
-                    "insertTable",
-                    "imageUpload",
-                    "mediaEmbed",
-                    "|",
-                    "bulletedList",
-                    "numberedList",
-                    "|",
-                    "blockQuote",
-                    "horizontalLine",
-                  ],
-                },
-                image: {
-                  toolbar: [
-                    "imageStyle:alignLeft",
-                    "imageStyle:alignCenter",
-                    "imageStyle:alignRight",
-                    "|",
-                    "resizeImage",
-                  ],
-                },
-                heading: {
-                  options: [
-                    {
-                      model: "paragraph",
-                      title: "Paragraph",
-                      class: "ck-heading_paragraph",
-                    },
-                    {
-                      model: "heading1",
-                      view: "h1",
-                      title: "Heading 1",
-                      class: "ck-heading_heading1",
-                    },
-                    {
-                      model: "heading2",
-                      view: "h2",
-                      title: "Heading 2",
-                      class: "ck-heading_heading2",
-                    },
-                    {
-                      model: "heading3",
-                      view: "h3",
-                      title: "Heading 3",
-                      class: "ck-heading_heading3",
-                    },
-                  ],
-                },
-                placeholder: "Enter your message...",
-              } as any}
+              config={
+                {
+                  extraPlugins: [uploadPlugin, ImageResize, ImageStyle],
+                  toolbar: {
+                    items: [
+                      "undo",
+                      "redo",
+                      "|",
+                      "heading",
+                      "|",
+                      "bold",
+                      "italic",
+                      "underline",
+                      "strikethrough",
+                      "|",
+                      "code",
+                      "subscript",
+                      "superscript",
+                      "|",
+                      "link",
+                      "insertTable",
+                      "imageUpload",
+                      "mediaEmbed",
+                      "|",
+                      "bulletedList",
+                      "numberedList",
+                      "|",
+                      "blockQuote",
+                      "horizontalLine",
+                    ],
+                  },
+                  image: {
+                    toolbar: [
+                      "imageStyle:alignLeft",
+                      "imageStyle:alignCenter",
+                      "imageStyle:alignRight",
+                      "|",
+                      "resizeImage",
+                    ],
+                  },
+                  heading: {
+                    options: [
+                      {
+                        model: "paragraph",
+                        title: "Paragraph",
+                        class: "ck-heading_paragraph",
+                      },
+                      {
+                        model: "heading1",
+                        view: "h1",
+                        title: "Heading 1",
+                        class: "ck-heading_heading1",
+                      },
+                      {
+                        model: "heading2",
+                        view: "h2",
+                        title: "Heading 2",
+                        class: "ck-heading_heading2",
+                      },
+                      {
+                        model: "heading3",
+                        view: "h3",
+                        title: "Heading 3",
+                        class: "ck-heading_heading3",
+                      },
+                    ],
+                  },
+                  placeholder: "Enter your message...",
+                } as any
+              }
               data={body}
               disabled={isSending}
               onChange={(event, editor) => {

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Desk, UpdateDeskRequest } from '../types';
-import * as api from '../api/client';
-import { parseClosureAndSignature } from '../utils/messageTemplate';
-import './Settings.css';
+import React, { useState } from "react";
+import { Desk, UpdateDeskRequest } from "../types";
+import * as api from "../api/client";
+import { parseClosureAndSignature } from "../utils/messageTemplate";
+import "./Settings.css";
 
 interface SettingsProps {
   desk: Desk;
@@ -10,18 +10,28 @@ interface SettingsProps {
   onDeskUpdated: (desk: Desk) => void;
 }
 
-const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => {
+const Settings: React.FC<SettingsProps> = ({
+  desk,
+  onClose,
+  onDeskUpdated,
+}) => {
   const [deskName, setDeskName] = useState(desk.name);
   const [autoIndent, setAutoIndent] = useState(desk.auto_indent);
-  const [fontFamily, setFontFamily] = useState(desk.font_family || 'Georgia, serif');
-  const [fontSize, setFontSize] = useState(desk.font_size || '14px');
-  const [defaultSalutation, setDefaultSalutation] = useState(desk.default_salutation || 'Dear [User],');
-  
+  const [fontFamily, setFontFamily] = useState(
+    desk.font_family || "Georgia, serif"
+  );
+  const [fontSize, setFontSize] = useState(desk.font_size || "14px");
+  const [defaultSalutation, setDefaultSalutation] = useState(
+    desk.default_salutation || "Dear [User],"
+  );
+
   // Parse closure and signature from default_closure
-  const initialParsed = parseClosureAndSignature(desk.default_closure || 'Sincerely,');
+  const initialParsed = parseClosureAndSignature(
+    desk.default_closure || "Sincerely,"
+  );
   const [closure, setClosure] = useState(initialParsed.closure);
   const [signature, setSignature] = useState(initialParsed.signature);
-  
+
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -34,7 +44,7 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
 
     try {
       // Combine closure and signature with double newline separator
-      const combinedClosure = signature 
+      const combinedClosure = signature
         ? `${closure}\n\n${signature}`
         : closure;
 
@@ -49,12 +59,12 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
 
       const updatedDesk = await api.updateDesk(desk.id, request);
       onDeskUpdated(updatedDesk);
-      setSuccessMessage('Settings saved successfully!');
+      setSuccessMessage("Settings saved successfully!");
       setTimeout(() => {
         setSuccessMessage(null);
       }, 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to save settings');
+      setError(err.message || "Failed to save settings");
     } finally {
       setIsSaving(false);
     }
@@ -65,16 +75,20 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
       <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
         <div className="settings-header">
           <h2>Settings</h2>
-          <button className="close-button" onClick={onClose}>×</button>
+          <button className="close-button" onClick={onClose}>
+            ×
+          </button>
         </div>
 
         <form onSubmit={handleSave} className="settings-form">
           {error && <div className="error-message">{error}</div>}
-          {successMessage && <div className="success-message">{successMessage}</div>}
+          {successMessage && (
+            <div className="success-message">{successMessage}</div>
+          )}
 
           <div className="settings-section">
             <h3>Desk Settings</h3>
-            
+
             <div className="form-group">
               <label htmlFor="deskName">Desk Name</label>
               <input
@@ -90,7 +104,7 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
 
           <div className="settings-section">
             <h3>Rendering Settings</h3>
-            
+
             <div className="form-group checkbox-group">
               <label>
                 <input
@@ -101,13 +115,16 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
                 />
                 <span>Auto-indent paragraphs (epistle-style)</span>
               </label>
-              <p className="help-text">When enabled, paragraphs will be automatically indented for a classic letter format</p>
+              <p className="help-text">
+                When enabled, paragraphs will be automatically indented for a
+                classic letter format
+              </p>
             </div>
           </div>
 
           <div className="settings-section">
             <h3>Typography</h3>
-            
+
             <div className="form-group">
               <label htmlFor="fontFamily">Font Family</label>
               <select
@@ -117,12 +134,20 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
                 disabled={isSaving}
               >
                 <option value="Georgia, serif">Georgia (Serif)</option>
-                <option value="Times New Roman, serif">Times New Roman (Serif)</option>
+                <option value="Times New Roman, serif">
+                  Times New Roman (Serif)
+                </option>
                 <option value="Garamond, serif">Garamond (Serif)</option>
                 <option value="Arial, sans-serif">Arial (Sans-serif)</option>
-                <option value="Helvetica, sans-serif">Helvetica (Sans-serif)</option>
-                <option value="Verdana, sans-serif">Verdana (Sans-serif)</option>
-                <option value="Courier New, monospace">Courier New (Monospace)</option>
+                <option value="Helvetica, sans-serif">
+                  Helvetica (Sans-serif)
+                </option>
+                <option value="Verdana, sans-serif">
+                  Verdana (Sans-serif)
+                </option>
+                <option value="Courier New, monospace">
+                  Courier New (Monospace)
+                </option>
               </select>
             </div>
 
@@ -144,7 +169,7 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
 
           <div className="settings-section">
             <h3>Default Message Templates</h3>
-            
+
             <div className="form-group">
               <label htmlFor="defaultSalutation">Default Salutation</label>
               <input
@@ -155,7 +180,9 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
                 placeholder="e.g., Dear [User],"
                 disabled={isSaving}
               />
-              <p className="help-text">Use [User] as a placeholder for the recipient's name</p>
+              <p className="help-text">
+                Use [User] as a placeholder for the recipient's name
+              </p>
             </div>
 
             <div className="form-group">
@@ -168,7 +195,10 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
                 placeholder="e.g., Best Regards,"
                 disabled={isSaving}
               />
-              <p className="help-text">The closing phrase for your messages (e.g., "Sincerely,", "Best Regards,")</p>
+              <p className="help-text">
+                The closing phrase for your messages (e.g., "Sincerely,", "Best
+                Regards,")
+              </p>
             </div>
 
             <div className="form-group">
@@ -181,16 +211,27 @@ const Settings: React.FC<SettingsProps> = ({ desk, onClose, onDeskUpdated }) => 
                 rows={4}
                 disabled={isSaving}
               />
-              <p className="help-text">Your signature block (name, title, contact info, etc.)</p>
+              <p className="help-text">
+                Your signature block (name, title, contact info, etc.)
+              </p>
             </div>
           </div>
 
           <div className="settings-actions">
-            <button type="button" onClick={onClose} className="btn btn-secondary" disabled={isSaving}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-secondary"
+              disabled={isSaving}
+            >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save Settings'}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isSaving}
+            >
+              {isSaving ? "Saving..." : "Save Settings"}
             </button>
           </div>
         </form>
