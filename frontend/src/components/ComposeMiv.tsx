@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
-import { ImageResize, ImageStyle } from "@ckeditor/ckeditor5-image";
 import { CreateMivRequest, Contact, Desk } from "../types";
 import * as api from "../api/client";
 import { uploadPlugin } from "../utils/ckEditorUploadAdapter";
@@ -229,7 +228,7 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({
               editor={ClassicEditor as any}
               config={
                 {
-                  extraPlugins: [uploadPlugin, ImageResize, ImageStyle],
+                  extraPlugins: [uploadPlugin],
                   toolbar: {
                     items: [
                       "undo",

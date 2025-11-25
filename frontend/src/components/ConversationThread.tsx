@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-import { ImageResize, ImageStyle } from '@ckeditor/ckeditor5-image';
 import { GetConversationResponse, Contact, ConversationMiv, Desk, Account } from '../types';
 import * as api from '../api/client';
 import { uploadPlugin } from '../utils/ckEditorUploadAdapter';
@@ -302,7 +301,7 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
                   <CKEditor
                     editor={ClassicEditor as any}
                     config={{
-                      extraPlugins: [uploadPlugin, ImageResize, ImageStyle],
+                      extraPlugins: [uploadPlugin],
                       toolbar: {
                         items: [
                           'undo', 'redo', '|',
