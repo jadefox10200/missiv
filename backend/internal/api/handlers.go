@@ -29,6 +29,26 @@ const (
 // Compiled regex for filename sanitization (compiled once at package level)
 var safeFilenameRegex = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
 
+// normalizePhoneID removes non-digit characters from a phone-style ID
+func normalizePhoneID(id string) string {
+	var normalized strings.Builder
+	for _, r := range id {
+		if r >= '0' && r <= '9' {
+			normalized.WriteRune(r)
+		}
+	}
+	return normalized.String()
+}
+
+// formatPhoneID formats a 10-digit phone-style ID as XXXX-XX-XXXX
+func formatPhoneID(id string) string {
+	digits := normalizePhoneID(id)
+	if len(digits) == 10 {
+		return fmt.Sprintf("%s-%s-%s", digits[0:4], digits[4:6], digits[6:10])
+	}
+	return id
+}
+
 // Account handlers
 
 func (s *Server) registerAccount(c *gin.Context) {
@@ -523,12 +543,28 @@ func (s *Server) createConversation(c *gin.Context) {
 		return
 	}
 
-	// Validate that recipient desk exists
-	_, err := s.storage.GetDesk(req.To)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Recipient desk '%s' does not exist. Please verify the desk number and try again.", req.To)})
+	// Normalize the To field (remove non-digits) and validate length
+	normalizedTo := normalizePhoneID(req.To)
+	if len(normalizedTo) != 10 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Recipient ID must be a 10-digit number"})
 		return
 	}
+
+	// Validate that recipient desk exists
+	_, err := s.storage.GetDesk(normalizedTo)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Recipient desk '%s' does not exist. Please verify the desk number and try again.", normalizedTo)})
+		return
+	}
+
+	// Determine ToDisplay: use provided value or synthesize from normalized To
+	toDisplay := req.ToDisplay
+	if toDisplay == "" {
+		toDisplay = formatPhoneID(normalizedTo)
+	}
+
+	// FromDisplay is the formatted representation of the sender's desk ID
+	fromDisplay := formatPhoneID(deskID)
 
 	// Create conversation
 	conv := &models.Conversation{
@@ -546,7 +582,9 @@ func (s *Server) createConversation(c *gin.Context) {
 		ConversationID: conv.ID,
 		SeqNo:          1,
 		From:           deskID,
-		To:             req.To,
+		FromDisplay:    fromDisplay,
+		To:             normalizedTo,
+		ToDisplay:      toDisplay,
 		Subject:        req.Subject,
 		Body:           base64.StdEncoding.EncodeToString([]byte(req.Body)),
 		State:          models.StateSENT, // Use SENT state for newly created mivs
@@ -560,11 +598,11 @@ func (s *Server) createConversation(c *gin.Context) {
 
 	// Create notification for recipient
 	notification := &models.Notification{
-		DeskID:         req.To,
+		DeskID:         normalizedTo,
 		Type:           models.NotificationTypeNewMiv,
 		MivID:          miv.ID,
 		ConversationID: conv.ID,
-		Message:        fmt.Sprintf("New message from %s: %s", deskID, req.Subject),
+		Message:        fmt.Sprintf("New message from %s: %s", fromDisplay, req.Subject),
 		Read:           false,
 	}
 	s.storage.CreateNotification(notification)
@@ -598,22 +636,31 @@ func (s *Server) replyToConversation(c *gin.Context) {
 		return
 	}
 
-	// Get existing mivs to determine recipient
+	// Get existing mivs to determine recipient and their display info
 	mivs, err := s.storage.GetConversationMivs(conversationID)
 	if err != nil || len(mivs) == 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get conversation mivs"})
 		return
 	}
 
-	// Determine recipient (the other party in the conversation)
+	// Determine recipient (the other party in the conversation) and their display info
 	var recipientID string
+	var recipientDisplay string
 	for _, m := range mivs {
 		if m.From != deskID {
 			recipientID = m.From
+			// Use the FromDisplay from a previous miv if available
+			if m.FromDisplay != "" {
+				recipientDisplay = m.FromDisplay
+			}
 			break
 		}
 		if m.To != deskID {
 			recipientID = m.To
+			// Use the ToDisplay from a previous miv if available
+			if m.ToDisplay != "" {
+				recipientDisplay = m.ToDisplay
+			}
 			break
 		}
 	}
@@ -623,11 +670,21 @@ func (s *Server) replyToConversation(c *gin.Context) {
 		return
 	}
 
+	// If no display was found, synthesize from normalized ID
+	if recipientDisplay == "" {
+		recipientDisplay = formatPhoneID(recipientID)
+	}
+
+	// FromDisplay is the formatted representation of the sender's desk ID
+	fromDisplay := formatPhoneID(deskID)
+
 	// Create reply miv
 	miv := &models.ConversationMiv{
 		ConversationID: conversationID,
 		From:           deskID,
+		FromDisplay:    fromDisplay,
 		To:             recipientID,
+		ToDisplay:      recipientDisplay,
 		Subject:        conv.Subject,
 		Body:           base64.StdEncoding.EncodeToString([]byte(req.Body)),
 		State:          models.StateSENT, // Use SENT state for replies
@@ -654,9 +711,9 @@ func (s *Server) replyToConversation(c *gin.Context) {
 
 	// Create notification for recipient
 	notifType := models.NotificationTypeReply
-	message := fmt.Sprintf("Reply from %s in: %s", deskID, conv.Subject)
+	message := fmt.Sprintf("Reply from %s in: %s", fromDisplay, conv.Subject)
 	if req.IsAck {
-		message = fmt.Sprintf("ACK from %s in: %s", deskID, conv.Subject)
+		message = fmt.Sprintf("ACK from %s in: %s", fromDisplay, conv.Subject)
 	}
 
 	notification := &models.Notification{

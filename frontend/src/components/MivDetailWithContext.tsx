@@ -220,13 +220,21 @@ function MivDetailWithContext({
     return id;
   };
 
-  const getDisplayName = (deskIdRef: string) => {
+  // Get display name with preference for miv display fields
+  const getDisplayNameForMiv = (miv: ConversationMiv, field: 'from' | 'to') => {
+    const deskIdRef = field === 'from' ? miv.from : miv.to;
+    const displayField = field === 'from' ? miv.from_display : miv.to_display;
+    
+    // First check if there's a contact for this desk
     const contact = contacts.find((c) => c.desk_id_ref === deskIdRef);
     const formattedId = formatPhoneId(deskIdRef);
+    
     if (contact) {
       return `${contact.name} @ ${formattedId}`;
     }
-    return formattedId;
+    
+    // Use display field from miv if available, otherwise format the ID
+    return displayField || formattedId;
   };
 
   const isContact = (deskIdRef: string) => {
@@ -312,7 +320,7 @@ function MivDetailWithContext({
               <div className="epistle-field">
                 <span className="epistle-field-label">To:</span>
                 <span className="epistle-field-value">
-                  {getDisplayName(selectedMiv.to)}
+                  {getDisplayNameForMiv(selectedMiv, 'to')}
                 </span>
                 {!isContact(selectedMiv.to) && (
                   <button
@@ -327,7 +335,7 @@ function MivDetailWithContext({
               <div className="epistle-field">
                 <span className="epistle-field-label">From:</span>
                 <span className="epistle-field-value">
-                  {getDisplayName(selectedMiv.from)}
+                  {getDisplayNameForMiv(selectedMiv, 'from')}
                 </span>
                 {!isContact(selectedMiv.from) && (
                   <button

@@ -136,13 +136,21 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
     return id;
   };
 
-  const getDisplayName = (deskIdRef: string) => {
+  // Get display name with preference for miv display fields
+  const getDisplayNameForMiv = (miv: ConversationMiv, field: 'from' | 'to') => {
+    const deskIdRef = field === 'from' ? miv.from : miv.to;
+    const displayField = field === 'from' ? miv.from_display : miv.to_display;
+    
+    // First check if there's a contact for this desk
     const contact = contacts.find(c => c.desk_id_ref === deskIdRef);
     const formattedId = formatDeskId(deskIdRef);
+    
     if (contact) {
       return `${contact.name} @ ${formattedId}`;
     }
-    return formattedId;
+    
+    // Use display field from miv if available, otherwise format the ID
+    return displayField || formattedId;
   };
 
   if (!conversation) {
@@ -212,7 +220,7 @@ function ConversationThread({ conversation, currentDeskId, desk, account, onRepl
               {/* INBOX-style layout: FROM, DATE, SUBJECT (inline) */}
               <div className="message-inbox-header">
                 <span className="message-inbox-from">
-                  {isFromMe ? `To: ${getDisplayName(miv.to)}` : `From: ${getDisplayName(miv.from)}`}
+                  {isFromMe ? `To: ${getDisplayNameForMiv(miv, 'to')}` : `From: ${getDisplayNameForMiv(miv, 'from')}`}
                 </span>
                 <span className="message-inbox-date">{formatDate(miv.created_at)}</span>
                 <span className="message-inbox-seq">#{miv.seq_no}</span>

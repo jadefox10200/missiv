@@ -17,22 +17,25 @@ const (
 // Miv represents a message in the Missiv system
 type Miv struct {
 	ID          string     `json:"id"`
-	From        string     `json:"from"`                  // Phone-number-style sender ID
-	To          string     `json:"to"`                    // Phone-number-style recipient ID
-	Subject     string     `json:"subject"`               // Miv subject
-	Body        string     `json:"body"`                  // Encrypted miv body
-	State       MivState   `json:"state"`                 // Current state
-	CreatedAt   time.Time  `json:"created_at"`            // When the miv was created
-	SentAt      *time.Time `json:"sent_at,omitempty"`     // When the miv was sent
-	ReceivedAt  *time.Time `json:"received_at,omitempty"` // When the miv was received
-	IsEncrypted bool       `json:"is_encrypted"`          // Whether the body is encrypted
+	From        string     `json:"from"`                           // Phone-number-style sender ID
+	FromDisplay string     `json:"from_display,omitempty"`         // Display representation of the sender
+	To          string     `json:"to"`                             // Phone-number-style recipient ID
+	ToDisplay   string     `json:"to_display,omitempty"`           // Display representation of the recipient
+	Subject     string     `json:"subject"`                        // Miv subject
+	Body        string     `json:"body"`                           // Encrypted miv body
+	State       MivState   `json:"state"`                          // Current state
+	CreatedAt   time.Time  `json:"created_at"`                     // When the miv was created
+	SentAt      *time.Time `json:"sent_at,omitempty"`              // When the miv was sent
+	ReceivedAt  *time.Time `json:"received_at,omitempty"`          // When the miv was received
+	IsEncrypted bool       `json:"is_encrypted"`                   // Whether the body is encrypted
 }
 
 // CreateMivRequest represents a request to create a new miv
 type CreateMivRequest struct {
-	To      string `json:"to" binding:"required"`
-	Subject string `json:"subject" binding:"required"`
-	Body    string `json:"body" binding:"required"`
+	To        string `json:"to" binding:"required"`
+	ToDisplay string `json:"to_display"` // Optional: display representation of the recipient
+	Subject   string `json:"subject" binding:"required"`
+	Body      string `json:"body" binding:"required"`
 }
 
 // UpdateStateRequest represents a request to update miv state
