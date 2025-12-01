@@ -5,7 +5,9 @@ export type NotificationType = 'READ_RECEIPT' | 'NEW_MIV' | 'REPLY';
 export interface Miv {
   id: string;
   from: string;
+  from_display?: string;
   to: string;
+  to_display?: string;
   subject: string;
   body: string;
   state: MivState;
@@ -23,6 +25,7 @@ export interface Identity {
 
 export interface CreateMivRequest {
   to: string;
+  to_display?: string;
   subject: string;
   body: string;
 }
@@ -117,7 +120,9 @@ export interface ConversationMiv {
   conversation_id: string;
   seq_no: number;
   from: string;
+  from_display?: string;
   to: string;
+  to_display?: string;
   subject: string;
   body: string;
   state: MivState;
@@ -132,6 +137,7 @@ export interface ConversationMiv {
 
 export interface CreateConversationRequest {
   to: string;
+  to_display?: string;
   subject: string;
   body: string;
 }

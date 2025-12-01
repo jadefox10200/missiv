@@ -100,7 +100,8 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({
     setError(null);
 
     try {
-      await onSend({ to, subject, body });
+      const toDisplay = getRecipientDisplay();
+      await onSend({ to, to_display: toDisplay, subject, body });
       // Reset form on success
       setTo("");
       setSubject("");

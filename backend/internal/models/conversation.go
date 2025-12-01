@@ -19,7 +19,9 @@ type ConversationMiv struct {
 	ConversationID string     `json:"conversation_id"`       // Parent conversation ID
 	SeqNo          int        `json:"seq_no"`                // Sequence number in conversation (1, 2, 3, ...)
 	From           string     `json:"from"`                  // Sender desk ID
+	FromDisplay    string     `json:"from_display,omitempty"` // Display representation of the sender
 	To             string     `json:"to"`                    // Recipient desk ID
+	ToDisplay      string     `json:"to_display,omitempty"`  // Display representation of the recipient
 	Subject        string     `json:"subject"`               // Miv subject (usually conversation subject for replies)
 	Body           string     `json:"body"`                  // Encrypted miv body
 	State          MivState   `json:"state"`                 // Current state
@@ -34,9 +36,10 @@ type ConversationMiv struct {
 
 // CreateConversationRequest represents a request to create a new conversation
 type CreateConversationRequest struct {
-	To      string `json:"to" binding:"required"`
-	Subject string `json:"subject" binding:"required"`
-	Body    string `json:"body" binding:"required"`
+	To        string `json:"to" binding:"required"`
+	ToDisplay string `json:"to_display"` // Optional: display representation of the recipient
+	Subject   string `json:"subject" binding:"required"`
+	Body      string `json:"body" binding:"required"`
 }
 
 // ReplyToConversationRequest represents a request to reply in a conversation
