@@ -6,6 +6,7 @@ import {
   ConversationWithLatest,
 } from "../types";
 import * as api from "../api/client";
+import { useSwipe } from "../utils/useSwipe";
 import "./BasketView.css";
 
 interface BasketViewProps {
@@ -13,6 +14,7 @@ interface BasketViewProps {
   selectedBasket: MivState;
   onMivClick: (miv: ConversationMiv) => void;
   selectedMivId?: string;
+  onBasketChange?: (basket: MivState) => void;
 }
 
 function BasketView({
@@ -20,6 +22,7 @@ function BasketView({
   selectedBasket,
   onMivClick,
   selectedMivId,
+  onBasketChange,
 }: BasketViewProps) {
   const [mivs, setMivs] = useState<ConversationMiv[]>([]);
   const [archivedConversations, setArchivedConversations] = useState<
@@ -27,6 +30,26 @@ function BasketView({
   >([]);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
+
+  // Basket navigation order for swipe gestures
+  const basketOrder: MivState[] = ['IN', 'PENDING', 'SENT', 'ARCHIVED'];
+  const currentBasketIndex = basketOrder.indexOf(selectedBasket);
+
+  const handleSwipeLeft = () => {
+    if (onBasketChange && currentBasketIndex < basketOrder.length - 1) {
+      const nextBasket = basketOrder[currentBasketIndex + 1];
+      onBasketChange(nextBasket);
+    }
+  };
+
+  const handleSwipeRight = () => {
+    if (onBasketChange && currentBasketIndex > 0) {
+      onBasketChange(basketOrder[currentBasketIndex - 1]);
+    }
+  };
+
+  // Add swipe gesture support
+  useSwipe(handleSwipeLeft, handleSwipeRight);
 
   useEffect(() => {
     const loadMivs = async () => {
@@ -69,10 +92,10 @@ function BasketView({
             const filteredMivs = mivArray.filter((miv) => {
               // Filter based on miv state from backend
               if (miv.state !== selectedBasket) return false;
-              
+
               // Exclude ACK mivs from SENT basket (they don't expect replies)
-              if (selectedBasket === 'SENT' && miv.is_ack) return false;
-              
+              if (selectedBasket === "SENT" && miv.is_ack) return false;
+
               return true;
             });
             allMivs.push(...filteredMivs);
@@ -248,9 +271,9 @@ function BasketView({
               <div className="basket-item-row">
                 <div className="basket-item-first-row">
                   <span className="basket-from">
-                    {miv.from === deskId
-                      ? `To: ${getDisplayName(miv.to)}`
-                      : `From: ${getDisplayName(miv.from)}`}
+                    {miv.state === "SENT"
+                      ? `To: ${miv.to}`
+                      : `From: ${miv.from}`}
                   </span>
                   <span className="basket-subject">{miv.subject}</span>
                 </div>

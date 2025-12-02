@@ -217,8 +217,12 @@ func (s *Server) createMiv(c *gin.Context) {
 
 	// For now, store as plain text. In production, encrypt the body.
 	// Encryption would require recipient's public key.
+	from := identity.ID
+	if req.From != "" {
+		from = req.From
+	}
 	miv := &models.Miv{
-		From:        identity.ID,
+		From:        from,
 		To:          req.To,
 		Subject:     req.Subject,
 		Body:        base64.StdEncoding.EncodeToString([]byte(req.Body)), // Base64 encode for now

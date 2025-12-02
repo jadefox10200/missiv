@@ -33,6 +33,9 @@ function App() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Mobile navigation state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Desk state
   const [desks, setDesks] = useState<Desk[]>([]);
   const [activeDesk, setActiveDesk] = useState<Desk | null>(null);
@@ -493,7 +496,34 @@ function App() {
     <div className="app">
       <div className="sidebar">
         <div className="sidebar-header">
+          <button 
+            className="mobile-menu-btn"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            ☰
+          </button>
           <h1>Missiv</h1>
+          <div className="mobile-header-actions">
+            {selectedMiv && (
+              <button 
+                className="mobile-back-btn"
+                onClick={() => setSelectedMiv(null)}
+                aria-label="Back to basket"
+              >
+                ←
+              </button>
+            )}
+            {currentView !== 'compose' && (
+              <button 
+                className="mobile-compose-btn"
+                onClick={() => setCurrentView('compose')}
+                aria-label="Compose new message"
+              >
+                ✏️ Compose
+              </button>
+            )}
+          </div>
           <div className="user-info">
             <div className="user-name">{account.display_name}</div>
             <div className="user-username">@{account.username}</div>
@@ -514,7 +544,7 @@ function App() {
           + New Conversation
         </button>
 
-        <nav className="nav-menu">
+        <nav className={`nav-menu ${mobileMenuOpen ? 'open' : ''}`}>
           <div className="nav-section">
             <h4>Baskets</h4>
             <button
@@ -523,6 +553,7 @@ function App() {
                 setCurrentView('baskets');
                 setSelectedBasket('IN');
                 setSelectedMiv(null);
+                setMobileMenuOpen(false);
               }}
             >
               📥 Inbox
@@ -534,6 +565,7 @@ function App() {
                 setCurrentView('baskets');
                 setSelectedBasket('PENDING');
                 setSelectedMiv(null);
+                setMobileMenuOpen(false);
               }}
             >
               ⏳ Pending
@@ -545,6 +577,7 @@ function App() {
                 setCurrentView('baskets');
                 setSelectedBasket('SENT');
                 setSelectedMiv(null);
+                setMobileMenuOpen(false);
               }}
             >
               📤 Sent
@@ -556,7 +589,10 @@ function App() {
             <h4>Other</h4>
             <button
               className={currentView === 'conversations' ? 'active' : ''}
-              onClick={() => setCurrentView('conversations')}
+              onClick={() => {
+                setCurrentView('conversations');
+                setMobileMenuOpen(false);
+              }}
             >
               💬 Conversations
             </button>
@@ -566,22 +602,50 @@ function App() {
                 setCurrentView('baskets');
                 setSelectedBasket('ARCHIVED');
                 setSelectedMiv(null);
+                setMobileMenuOpen(false);
               }}
             >
               📁 Archived
             </button>
             <button
               className={currentView === 'contacts' ? 'active' : ''}
-              onClick={() => setCurrentView('contacts')}
+              onClick={() => {
+                setCurrentView('contacts');
+                setMobileMenuOpen(false);
+              }}
             >
               👥 Contacts
             </button>
             <button
               className={currentView === 'notifications' ? 'active' : ''}
-              onClick={() => setCurrentView('notifications')}
+              onClick={() => {
+                setCurrentView('notifications');
+                setMobileMenuOpen(false);
+              }}
             >
               🔔 Notifications
               {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
+            </button>
+          </div>
+
+          <div className="nav-section">
+            <h4>Account</h4>
+            <button
+              className={currentView === 'settings' ? 'active' : ''}
+              onClick={() => {
+                setCurrentView('settings');
+                setMobileMenuOpen(false);
+              }}
+            >
+              ⚙️ Settings
+            </button>
+            <button
+              onClick={() => {
+                handleLogout();
+                setMobileMenuOpen(false);
+              }}
+            >
+              🚪 Sign Out
             </button>
           </div>
         </nav>
@@ -599,6 +663,12 @@ function App() {
           </button>
         </div>
       </div>
+
+      {/* Mobile overlay */}
+      <div 
+        className={`mobile-overlay ${mobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+      ></div>
 
       <div className="main-content">
         {currentView === 'settings' ? (
@@ -626,16 +696,17 @@ function App() {
           <ContactManager deskId={activeDesk.id} />
         ) : currentView === 'baskets' ? (
           <>
-            <div className="basket-list-container">
+            <div className={`basket-list-container ${selectedMiv ? 'mobile-hidden' : ''}`}>
               <BasketView
                 key={basketRefreshKey}
                 deskId={activeDesk.id}
                 selectedBasket={selectedBasket}
                 onMivClick={handleMivClick}
                 selectedMivId={selectedMiv?.id}
+                onBasketChange={setSelectedBasket}
               />
             </div>
-            <div className="basket-detail-container">
+            <div className={`basket-detail-container ${selectedMiv ? 'mobile-fullscreen' : ''}`}>
               {selectedMiv ? (
                 <MivDetailWithContext
                   miv={selectedMiv}

@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jadefox10200/missiv/backend/internal/crypto"
 	"github.com/jadefox10200/missiv/backend/internal/models"
 )
 
@@ -247,7 +248,10 @@ func (s *MemoryStorage) GetDesk(id string) (*models.Desk, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	desk, exists := s.desks[id]
+	// Normalize the ID to handle formatted inputs like "555-123-4567"
+	normalizedID := crypto.NormalizeDeskID(id)
+
+	desk, exists := s.desks[normalizedID]
 	if !exists {
 		return nil, fmt.Errorf("desk not found: %s", id)
 	}
@@ -349,7 +353,9 @@ func (s *MemoryStorage) ListConversationsByDesk(deskID string) ([]*models.Conver
 	// Then, add conversations where this desk is a participant (sent to or received from)
 	for convID, mivs := range s.conversationMivs {
 		for _, miv := range mivs {
-			if miv.To == deskID || miv.From == deskID {
+			normalizedMivTo := crypto.NormalizeDeskID(miv.To)
+			normalizedDeskID := crypto.NormalizeDeskID(deskID)
+			if normalizedMivTo == normalizedDeskID || miv.From == deskID {
 				if conv, exists := s.conversations[convID]; exists {
 					conversationMap[convID] = conv
 				}

@@ -415,8 +415,10 @@ func (s *Server) listConversations(c *gin.Context) {
 		unreadCount := 0
 		if len(mivs) > 0 {
 			latestMiv = mivs[len(mivs)-1]
+			normalizedDeskID := crypto.NormalizeDeskID(deskID)
 			for _, miv := range mivs {
-				if miv.To == deskID && miv.ReadAt == nil {
+				normalizedMivTo := crypto.NormalizeDeskID(miv.To)
+				if normalizedMivTo == normalizedDeskID && miv.ReadAt == nil {
 					unreadCount++
 				}
 			}
@@ -458,9 +460,11 @@ func (s *Server) getConversation(c *gin.Context) {
 
 	// If desk_id is provided, adjust miv states based on desk perspective
 	if deskID != "" {
+		normalizedDeskID := crypto.NormalizeDeskID(deskID)
 		// Adjust states from the perspective of the querying desk
 		for _, miv := range mivs {
-			if miv.To == deskID {
+			normalizedMivTo := crypto.NormalizeDeskID(miv.To)
+			if normalizedMivTo == normalizedDeskID {
 				// For incoming mivs
 				if miv.ReadAt == nil {
 					miv.State = models.StateIN
@@ -524,7 +528,8 @@ func (s *Server) createConversation(c *gin.Context) {
 	}
 
 	// Validate that recipient desk exists
-	_, err := s.storage.GetDesk(req.To)
+	normalizedTo := crypto.NormalizeDeskID(req.To)
+	_, err := s.storage.GetDesk(normalizedTo)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Recipient desk '%s' does not exist. Please verify the desk number and try again.", req.To)})
 		return
@@ -546,7 +551,7 @@ func (s *Server) createConversation(c *gin.Context) {
 		ConversationID: conv.ID,
 		SeqNo:          1,
 		From:           deskID,
-		To:             req.To,
+		To:             req.To, // Store the display format
 		Subject:        req.Subject,
 		Body:           base64.StdEncoding.EncodeToString([]byte(req.Body)),
 		State:          models.StateSENT, // Use SENT state for newly created mivs
@@ -560,7 +565,7 @@ func (s *Server) createConversation(c *gin.Context) {
 
 	// Create notification for recipient
 	notification := &models.Notification{
-		DeskID:         req.To,
+		DeskID:         normalizedTo, // Use normalized ID for routing
 		Type:           models.NotificationTypeNewMiv,
 		MivID:          miv.ID,
 		ConversationID: conv.ID,

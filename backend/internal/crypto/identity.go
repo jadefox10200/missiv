@@ -38,3 +38,14 @@ func FormatPhoneStyleID(id string) string {
 	}
 	return fmt.Sprintf("(%s) %s-%s", id[0:3], id[3:6], id[6:10])
 }
+
+// NormalizeDeskID removes non-digit characters from a desk ID for canonical matching
+func NormalizeDeskID(id string) string {
+	var normalized string
+	for _, r := range id {
+		if r >= '0' && r <= '9' {
+			normalized += string(r)
+		}
+	}
+	return normalized
+}

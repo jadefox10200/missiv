@@ -30,6 +30,7 @@ type Miv struct {
 
 // CreateMivRequest represents a request to create a new miv
 type CreateMivRequest struct {
+	From    string `json:"from,omitempty"` // Optional sender display name
 	To      string `json:"to" binding:"required"`
 	Subject string `json:"subject" binding:"required"`
 	Body    string `json:"body" binding:"required"`

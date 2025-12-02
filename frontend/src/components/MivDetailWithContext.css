@@ -11,6 +11,7 @@
   color: white;
   padding: 15px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
 }
 
 .thread-header {
@@ -587,6 +588,15 @@
   margin: 0;
 }
 
+/* Image styling within message content */
+.epistle-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 10px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 /* CKEditor container styling */
 .editor-container {
   border: 1px solid #ddd;
@@ -598,4 +608,63 @@
 .editor-container .ck-editor__editable {
   min-height: 200px;
   max-height: 400px;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .miv-detail-with-context {
+    height: 100vh;
+  }
+
+  .thread-context {
+    padding: 12px 16px;
+  }
+
+  .thread-icons {
+    gap: 6px;
+  }
+
+  .thread-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .miv-content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 80px; /* Space for fixed action buttons */
+  }
+
+  .miv-actions {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #dee2e6;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    z-index: 10;
+  }
+
+  .miv-actions .btn {
+    flex: 1;
+    min-width: 120px;
+    max-width: 160px;
+  }
+
+  .forgotten-label {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #6c757d;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+  }
 }

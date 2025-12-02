@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { CKEditor } from '@ckeditor/ckeditor5-react';
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-import { ConversationMiv, GetConversationResponse, Contact, Desk } from "../types";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import {
+  ConversationMiv,
+  GetConversationResponse,
+  Contact,
+  Desk,
+} from "../types";
 import * as api from "../api/client";
 import { uploadPlugin } from "../utils/ckEditorUploadAdapter";
 import "./MivDetailWithContext.css";
@@ -50,6 +55,25 @@ function MivDetailWithContext({
         const mivArray = convResponse.mivs || [];
         const currentMiv = mivArray.find((m) => m.id === miv.id) || miv;
         setSelectedMiv(currentMiv);
+
+        // Mark message as read (move from IN to PENDING) if it's currently in IN state
+        if (currentMiv.state === 'IN') {
+          try {
+            await api.updateMivState(currentMiv.id, { state: 'PENDING' as const });
+            // Update local state to reflect the change
+            const updatedMiv = { ...currentMiv, state: 'PENDING' as const };
+            setSelectedMiv(updatedMiv);
+            // Also update in conversation if it exists
+            if (convResponse.mivs) {
+              const updatedMivs = convResponse.mivs.map(m => 
+                m.id === currentMiv.id ? updatedMiv : m
+              );
+              setConversation({ ...convResponse, mivs: updatedMivs });
+            }
+          } catch (err) {
+            console.error("Failed to mark message as read:", err);
+          }
+        }
       } catch (err) {
         console.error("Failed to load data:", err);
       } finally {
@@ -220,6 +244,10 @@ function MivDetailWithContext({
     return id;
   };
 
+  const normalizeDeskId = (id: string) => {
+    return id.replace(/\D/g, ""); // Remove all non-digits
+  };
+
   const getDisplayName = (deskIdRef: string) => {
     const contact = contacts.find((c) => c.desk_id_ref === deskIdRef);
     const formattedId = formatPhoneId(deskIdRef);
@@ -230,7 +258,13 @@ function MivDetailWithContext({
   };
 
   const isContact = (deskIdRef: string) => {
-    return contacts.some((c) => c.desk_id_ref === deskIdRef);
+    const normalizedId = normalizeDeskId(deskIdRef);
+    return contacts.some((c) => c.desk_id_ref === normalizedId);
+  };
+
+  const isOwnDeskId = (deskIdRef: string) => {
+    const normalizedId = normalizeDeskId(deskIdRef);
+    return normalizedId === currentDeskId;
   };
 
   const handleAddContact = async (e: React.FormEvent) => {
@@ -240,7 +274,7 @@ function MivDetailWithContext({
     try {
       await api.createContact(currentDeskId, {
         name: newContactName.trim(),
-        desk_id_ref: newContactDeskId,
+        desk_id_ref: newContactDeskId, // This is already normalized
         notes: "",
       });
 
@@ -258,8 +292,9 @@ function MivDetailWithContext({
     }
   };
 
-  const openAddContactModal = (deskIdRef: string) => {
-    setNewContactDeskId(deskIdRef);
+  const openAddContactModal = (displayString: string) => {
+    const normalizedId = normalizeDeskId(displayString);
+    setNewContactDeskId(normalizedId);
     setNewContactName("");
     setShowAddContactModal(true);
   };
@@ -274,7 +309,7 @@ function MivDetailWithContext({
 
   return (
     <div className="miv-detail-with-context">
-      {/* Conversation thread icons */}
+      {/* Conversation thread icons - keep at top */}
       <div className="thread-context">
         <div className="thread-header">
           <h3>Conversation Thread</h3>
@@ -303,8 +338,9 @@ function MivDetailWithContext({
         </div>
       </div>
 
-      {/* Selected miv detail */}
-      <div className="miv-detail-content">
+      {/* Miv content - flexible height */}
+      <div className="miv-content-area">
+        <div className="miv-detail-content">
         <div className="epistle-document">
           {/* Epistle-style header with formal layout */}
           <div className="epistle-header">
@@ -314,7 +350,7 @@ function MivDetailWithContext({
                 <span className="epistle-field-value">
                   {getDisplayName(selectedMiv.to)}
                 </span>
-                {!isContact(selectedMiv.to) && (
+                {!isContact(selectedMiv.to) && !isOwnDeskId(selectedMiv.to) && (
                   <button
                     className="btn-add-contact-inline"
                     onClick={() => openAddContactModal(selectedMiv.to)}
@@ -329,15 +365,16 @@ function MivDetailWithContext({
                 <span className="epistle-field-value">
                   {getDisplayName(selectedMiv.from)}
                 </span>
-                {!isContact(selectedMiv.from) && (
-                  <button
-                    className="btn-add-contact-inline"
-                    onClick={() => openAddContactModal(selectedMiv.from)}
-                    title="Add as contact"
-                  >
-                    + Add Contact
-                  </button>
-                )}
+                {!isContact(selectedMiv.from) &&
+                  !isOwnDeskId(selectedMiv.from) && (
+                    <button
+                      className="btn-add-contact-inline"
+                      onClick={() => openAddContactModal(selectedMiv.from)}
+                      title="Add as contact"
+                    >
+                      + Add Contact
+                    </button>
+                  )}
               </div>
             </div>
             <div className="epistle-header-right">
@@ -360,17 +397,19 @@ function MivDetailWithContext({
           </div>
 
           {/* Body content */}
-          <div 
+          <div
             className="epistle-body"
             style={{
-              fontFamily: currentDesk?.font_family || 'Georgia, serif',
-              fontSize: currentDesk?.font_size || '14px'
+              fontFamily: currentDesk?.font_family || "Georgia, serif",
+              fontSize: currentDesk?.font_size || "14px",
             }}
           >
             {selectedMiv.is_ack && <span className="ack-badge">[ACK] </span>}
-            <div 
-              className={`epistle-content ${currentDesk?.auto_indent ? 'auto-indent' : ''}`}
-              dangerouslySetInnerHTML={{ __html: atob(selectedMiv.body) }} 
+            <div
+              className={`epistle-content ${
+                currentDesk?.auto_indent ? "auto-indent" : ""
+              }`}
+              dangerouslySetInnerHTML={{ __html: atob(selectedMiv.body) }}
             />
           </div>
         </div>
@@ -516,38 +555,76 @@ function MivDetailWithContext({
             <div className="editor-container">
               <CKEditor
                 editor={ClassicEditor as any}
-                config={{
-                  extraPlugins: [uploadPlugin],
-                  toolbar: {
-                    items: [
-                      'undo', 'redo', '|',
-                      'heading', '|',
-                      'bold', 'italic', 'underline', 'strikethrough', '|',
-                      'code', 'subscript', 'superscript', '|',
-                      'link', 'insertTable', 'imageUpload', 'mediaEmbed', '|',
-                      'bulletedList', 'numberedList', '|',
-                      'blockQuote', 'horizontalLine'
-                    ]
-                  },
-                  image: {
-                    toolbar: [
-                      'imageStyle:alignLeft',
-                      'imageStyle:alignCenter',
-                      'imageStyle:alignRight',
-                      '|',
-                      'resizeImage'
-                    ]
-                  },
-                  heading: {
-                    options: [
-                      { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
-                      { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
-                      { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
-                      { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' }
-                    ]
-                  },
-                  placeholder: 'Write your reply...'
-                } as any}
+                config={
+                  {
+                    extraPlugins: [uploadPlugin],
+                    toolbar: {
+                      items: [
+                        "undo",
+                        "redo",
+                        "|",
+                        "heading",
+                        "|",
+                        "bold",
+                        "italic",
+                        "underline",
+                        "strikethrough",
+                        "|",
+                        "code",
+                        "subscript",
+                        "superscript",
+                        "|",
+                        "link",
+                        "insertTable",
+                        "imageUpload",
+                        "mediaEmbed",
+                        "|",
+                        "bulletedList",
+                        "numberedList",
+                        "|",
+                        "blockQuote",
+                        "horizontalLine",
+                      ],
+                    },
+                    image: {
+                      toolbar: [
+                        "imageStyle:alignLeft",
+                        "imageStyle:alignCenter",
+                        "imageStyle:alignRight",
+                        "|",
+                        "resizeImage",
+                      ],
+                    },
+                    heading: {
+                      options: [
+                        {
+                          model: "paragraph",
+                          title: "Paragraph",
+                          class: "ck-heading_paragraph",
+                        },
+                        {
+                          model: "heading1",
+                          view: "h1",
+                          title: "Heading 1",
+                          class: "ck-heading_heading1",
+                        },
+                        {
+                          model: "heading2",
+                          view: "h2",
+                          title: "Heading 2",
+                          class: "ck-heading_heading2",
+                        },
+                        {
+                          model: "heading3",
+                          view: "h3",
+                          title: "Heading 3",
+                          class: "ck-heading_heading3",
+                        },
+                      ],
+                    },
+                    placeholder: "Write your reply...",
+                  } as any
+                }
                 data={replyBody}
                 onChange={(event, editor) => {
                   const data = editor.getData();
@@ -585,6 +662,7 @@ function MivDetailWithContext({
           </form>
         )}
       </div>
+    </div>
 
       {/* Add Contact Modal */}
       {showAddContactModal && (
