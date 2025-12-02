@@ -229,6 +229,8 @@ func (s *Server) createMiv(c *gin.Context) {
 		State:       models.StatePENDING,
 		CreatedAt:   time.Now(),
 		IsEncrypted: false, // Set to true when implementing full encryption
+		FontFamily:  req.FontFamily,
+		FontSize:    req.FontSize,
 	}
 
 	if err := s.storage.CreateMiv(miv); err != nil {

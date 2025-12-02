@@ -26,14 +26,18 @@ type Miv struct {
 	SentAt      *time.Time `json:"sent_at,omitempty"`     // When the miv was sent
 	ReceivedAt  *time.Time `json:"received_at,omitempty"` // When the miv was received
 	IsEncrypted bool       `json:"is_encrypted"`          // Whether the body is encrypted
+	FontFamily  *string    `json:"font_family,omitempty"` // Font family for message display
+	FontSize    *string    `json:"font_size,omitempty"`   // Font size for message display
 }
 
 // CreateMivRequest represents a request to create a new miv
 type CreateMivRequest struct {
-	From    string `json:"from,omitempty"` // Optional sender display name
-	To      string `json:"to" binding:"required"`
-	Subject string `json:"subject" binding:"required"`
-	Body    string `json:"body" binding:"required"`
+	From       string  `json:"from,omitempty"`       // Optional sender display name
+	To         string  `json:"to" binding:"required"`
+	Subject    string  `json:"subject" binding:"required"`
+	Body       string  `json:"body" binding:"required"`
+	FontFamily *string `json:"font_family,omitempty"` // Font family for message display
+	FontSize   *string `json:"font_size,omitempty"`   // Font size for message display
 }
 
 // UpdateStateRequest represents a request to update miv state

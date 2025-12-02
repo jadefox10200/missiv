@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 export const useSwipe = (
   onSwipeLeft: () => void,
@@ -23,7 +23,10 @@ export const useSwipe = (
       const diffY = startY - endY;
 
       // Only trigger swipe if horizontal movement is greater than vertical
-      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > minSwipeDistance) {
+      if (
+        Math.abs(diffX) > Math.abs(diffY) &&
+        Math.abs(diffX) > minSwipeDistance
+      ) {
         if (diffX > 0) {
           onSwipeLeft();
         } else {
@@ -35,12 +38,12 @@ export const useSwipe = (
       startY = 0;
     };
 
-    document.addEventListener('touchstart', handleTouchStart);
-    document.addEventListener('touchend', handleTouchEnd);
+    document.addEventListener("touchstart", handleTouchStart);
+    document.addEventListener("touchend", handleTouchEnd);
 
     return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchend", handleTouchEnd);
     };
   }, [onSwipeLeft, onSwipeRight, minSwipeDistance]);
 };

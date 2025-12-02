@@ -100,7 +100,13 @@ const ComposeMiv: React.FC<ComposeMivProps> = ({
     setError(null);
 
     try {
-      await onSend({ to, subject, body });
+      await onSend({
+        to,
+        subject,
+        body,
+        font_family: desk.font_family,
+        font_size: desk.font_size,
+      });
       // Reset form on success
       setTo("");
       setSubject("");

@@ -30,19 +30,25 @@ type ConversationMiv struct {
 	IsEncrypted    bool       `json:"is_encrypted"`          // Whether the body is encrypted
 	IsAck          bool       `json:"is_ack"`                // Whether this is an ACK message
 	IsForgotten    bool       `json:"is_forgotten"`          // Whether this miv has been forgotten (stops tracking replies)
+	FontFamily     *string    `json:"font_family,omitempty"` // Font family for message display
+	FontSize       *string    `json:"font_size,omitempty"`   // Font size for message display
 }
 
 // CreateConversationRequest represents a request to create a new conversation
 type CreateConversationRequest struct {
-	To      string `json:"to" binding:"required"`
-	Subject string `json:"subject" binding:"required"`
-	Body    string `json:"body" binding:"required"`
+	To         string  `json:"to" binding:"required"`
+	Subject    string  `json:"subject" binding:"required"`
+	Body       string  `json:"body" binding:"required"`
+	FontFamily *string `json:"font_family,omitempty"` // Font family for message display
+	FontSize   *string `json:"font_size,omitempty"`   // Font size for message display
 }
 
 // ReplyToConversationRequest represents a request to reply in a conversation
 type ReplyToConversationRequest struct {
-	Body  string `json:"body" binding:"required"`
-	IsAck bool   `json:"is_ack"` // Whether this is an ACK message to end the conversation
+	Body       string  `json:"body" binding:"required"`
+	IsAck      bool    `json:"is_ack"`                // Whether this is an ACK message to end the conversation
+	FontFamily *string `json:"font_family,omitempty"` // Font family for message display
+	FontSize   *string `json:"font_size,omitempty"`   // Font size for message display
 }
 
 // ListConversationsResponse represents a list of conversations with metadata

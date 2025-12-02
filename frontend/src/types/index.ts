@@ -1,6 +1,12 @@
-export type MivState = 'IN' | 'PENDING' | 'SENT' | 'OUT' | 'UNANSWERED' | 'ARCHIVED';
+export type MivState =
+  | "IN"
+  | "PENDING"
+  | "SENT"
+  | "OUT"
+  | "UNANSWERED"
+  | "ARCHIVED";
 
-export type NotificationType = 'READ_RECEIPT' | 'NEW_MIV' | 'REPLY';
+export type NotificationType = "READ_RECEIPT" | "NEW_MIV" | "REPLY";
 
 export interface Miv {
   id: string;
@@ -13,6 +19,8 @@ export interface Miv {
   sent_at?: string;
   received_at?: string;
   is_encrypted: boolean;
+  font_family?: string;
+  font_size?: string;
 }
 
 export interface Identity {
@@ -25,6 +33,8 @@ export interface CreateMivRequest {
   to: string;
   subject: string;
   body: string;
+  font_family?: string;
+  font_size?: string;
 }
 
 export interface UpdateStateRequest {
@@ -128,17 +138,23 @@ export interface ConversationMiv {
   is_encrypted: boolean;
   is_ack: boolean;
   is_forgotten: boolean;
+  font_family?: string;
+  font_size?: string;
 }
 
 export interface CreateConversationRequest {
   to: string;
   subject: string;
   body: string;
+  font_family?: string;
+  font_size?: string;
 }
 
 export interface ReplyToConversationRequest {
   body: string;
   is_ack?: boolean;
+  font_family?: string;
+  font_size?: string;
 }
 
 export interface ConversationWithLatest {

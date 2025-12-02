@@ -16,7 +16,7 @@ const Settings: React.FC<SettingsProps> = ({
   onDeskUpdated,
 }) => {
   const [deskName, setDeskName] = useState(desk.name);
-  const [autoIndent, setAutoIndent] = useState(desk.auto_indent);
+  const [autoIndent, setAutoIndent] = useState(desk.auto_indent ?? false);
   const [fontFamily, setFontFamily] = useState(
     desk.font_family || "Georgia, serif"
   );
@@ -60,9 +60,8 @@ const Settings: React.FC<SettingsProps> = ({
       const updatedDesk = await api.updateDesk(desk.id, request);
       onDeskUpdated(updatedDesk);
       setSuccessMessage("Settings saved successfully!");
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
+      // Close the dialog after successful save
+      onClose();
     } catch (err: any) {
       setError(err.message || "Failed to save settings");
     } finally {

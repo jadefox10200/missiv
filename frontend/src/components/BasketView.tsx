@@ -32,7 +32,7 @@ function BasketView({
   const [contacts, setContacts] = useState<Contact[]>([]);
 
   // Basket navigation order for swipe gestures
-  const basketOrder: MivState[] = ['IN', 'PENDING', 'SENT', 'ARCHIVED'];
+  const basketOrder: MivState[] = ["IN", "PENDING", "SENT", "ARCHIVED"];
   const currentBasketIndex = basketOrder.indexOf(selectedBasket);
 
   const handleSwipeLeft = () => {

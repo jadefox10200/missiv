@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import Auth from './components/Auth';
-import DeskSwitcher from './components/DeskSwitcher';
-import ConversationList from './components/ConversationList';
-import ConversationThread from './components/ConversationThread';
-import BasketView from './components/BasketView';
-import MivDetailWithContext from './components/MivDetailWithContext';
-import NotificationPanel from './components/NotificationPanel';
-import ComposeMiv from './components/ComposeMiv';
-import ContactManager from './components/ContactManager';
-import Settings from './components/Settings';
-import Toast from './components/Toast';
+import React, { useState, useEffect } from "react";
+import Auth from "./components/Auth";
+import DeskSwitcher from "./components/DeskSwitcher";
+import ConversationList from "./components/ConversationList";
+import ConversationThread from "./components/ConversationThread";
+import BasketView from "./components/BasketView";
+import MivDetailWithContext from "./components/MivDetailWithContext";
+import NotificationPanel from "./components/NotificationPanel";
+import ComposeMiv from "./components/ComposeMiv";
+import ContactManager from "./components/ContactManager";
+import Settings from "./components/Settings";
+import Toast from "./components/Toast";
 import {
   Account,
   Desk,
@@ -21,11 +21,17 @@ import {
   CreateMivRequest,
   MivState,
   Contact,
-} from './types';
-import * as api from './api/client';
-import './App.css';
+} from "./types";
+import * as api from "./api/client";
+import "./App.css";
 
-type View = 'baskets' | 'conversations' | 'compose' | 'notifications' | 'contacts' | 'settings';
+type View =
+  | "baskets"
+  | "conversations"
+  | "compose"
+  | "notifications"
+  | "contacts"
+  | "settings";
 
 function App() {
   // Authentication state
@@ -41,10 +47,10 @@ function App() {
   const [activeDesk, setActiveDesk] = useState<Desk | null>(null);
 
   // Basket view state (primary interface)
-  const [selectedBasket, setSelectedBasket] = useState<MivState>('IN');
+  const [selectedBasket, setSelectedBasket] = useState<MivState>("IN");
   const [selectedMiv, setSelectedMiv] = useState<ConversationMiv | null>(null);
   const [basketRefreshKey, setBasketRefreshKey] = useState<number>(0);
-  
+
   // Basket counts
   const [basketCounts, setBasketCounts] = useState<{
     inbox: number;
@@ -54,9 +60,12 @@ function App() {
   }>({ inbox: 0, pending: 0, sent: 0, archived: 0 });
 
   // Conversation view state (supplementary)
-  const [conversations, setConversations] = useState<ConversationWithLatest[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<GetConversationResponse | null>(null);
-  const [currentView, setCurrentView] = useState<View>('baskets');
+  const [conversations, setConversations] = useState<ConversationWithLatest[]>(
+    []
+  );
+  const [selectedConversation, setSelectedConversation] =
+    useState<GetConversationResponse | null>(null);
+  const [currentView, setCurrentView] = useState<View>("baskets");
 
   // Notification state
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -68,8 +77,8 @@ function App() {
 
   // Load saved session on mount
   useEffect(() => {
-    const savedAccount = localStorage.getItem('account');
-    const savedToken = localStorage.getItem('token');
+    const savedAccount = localStorage.getItem("account");
+    const savedToken = localStorage.getItem("token");
 
     if (savedAccount && savedToken) {
       try {
@@ -77,8 +86,8 @@ function App() {
         setAccount(acc);
         setToken(savedToken);
       } catch (e) {
-        localStorage.removeItem('account');
-        localStorage.removeItem('token');
+        localStorage.removeItem("account");
+        localStorage.removeItem("token");
       }
     }
     setLoading(false);
@@ -95,14 +104,20 @@ function App() {
 
         if (deskList.length > 0 && !activeDesk) {
           const activeDeskId = account.active_desk || deskList[0].id;
-          const desk = deskList.find(d => d.id === activeDeskId) || deskList[0];
+          const desk =
+            deskList.find((d) => d.id === activeDeskId) || deskList[0];
           setActiveDesk(desk);
         }
       } catch (err: any) {
-        console.error('Failed to load desks:', err);
+        console.error("Failed to load desks:", err);
         // If there's an authentication error, clear the session
-        if (err.message && (err.message.includes('401') || err.message.includes('Unauthorized') || err.message.includes('not found'))) {
-          alert('Your session is no longer valid. Please sign in again.');
+        if (
+          err.message &&
+          (err.message.includes("401") ||
+            err.message.includes("Unauthorized") ||
+            err.message.includes("not found"))
+        ) {
+          alert("Your session is no longer valid. Please sign in again.");
           handleLogout();
         }
       }
@@ -119,23 +134,27 @@ function App() {
       if (!activeDesk) return;
 
       try {
-        const [convResponse, notifResponse, contactsResponse] = await Promise.all([
-          api.listConversations(activeDesk.id),
-          api.listNotifications(activeDesk.id, false),
-          api.listContacts(activeDesk.id)
-        ]);
+        const [convResponse, notifResponse, contactsResponse] =
+          await Promise.all([
+            api.listConversations(activeDesk.id),
+            api.listNotifications(activeDesk.id, false),
+            api.listContacts(activeDesk.id),
+          ]);
         setConversations(convResponse.conversations || []);
         setNotifications(notifResponse.notifications || []);
         setUnreadCount(notifResponse.unread_count);
         setContacts(contactsResponse.contacts || []);
-        
+
         // Calculate basket counts
         await calculateBasketCounts(convResponse.conversations, activeDesk.id);
       } catch (err: any) {
-        console.error('Failed to load data:', err);
+        console.error("Failed to load data:", err);
         // If there's an authentication error, clear the session
-        if (err.message && (err.message.includes('401') || err.message.includes('Unauthorized'))) {
-          alert('Your session is no longer valid. Please sign in again.');
+        if (
+          err.message &&
+          (err.message.includes("401") || err.message.includes("Unauthorized"))
+        ) {
+          alert("Your session is no longer valid. Please sign in again.");
           handleLogout();
         }
       }
@@ -152,57 +171,63 @@ function App() {
       return () => clearInterval(interval);
     }
   }, [activeDesk]);
-  
-  const calculateBasketCounts = async (convs: ConversationWithLatest[], deskId: string) => {
+
+  const calculateBasketCounts = async (
+    convs: ConversationWithLatest[],
+    deskId: string
+  ) => {
     let inboxCount = 0;
     let pendingCount = 0;
     let sentCount = 0;
     let archivedCount = 0;
-    
+
     // Handle case where convs might be null or undefined
     if (!convs || !Array.isArray(convs)) {
       setBasketCounts({
         inbox: 0,
         pending: 0,
         sent: 0,
-        archived: 0
+        archived: 0,
       });
       return;
     }
-    
+
     for (const conv of convs) {
       try {
         // Pass deskId to get miv states from user's perspective
-        const fullConv = await api.getConversation(conv.conversation.id, deskId);
-        
+        const fullConv = await api.getConversation(
+          conv.conversation.id,
+          deskId
+        );
+
         for (const miv of fullConv.mivs) {
           // Count based on miv state from backend
           if (!conv.conversation.is_archived) {
-            if (miv.state === 'IN') {
+            if (miv.state === "IN") {
               inboxCount++;
-            } else if (miv.state === 'PENDING') {
+            } else if (miv.state === "PENDING") {
               pendingCount++;
-            } else if (miv.state === 'SENT' && !miv.is_ack) {
+            } else if (miv.state === "SENT" && !miv.is_ack) {
               // Exclude ACK mivs from SENT basket count (they don't expect replies)
               sentCount++;
             }
           }
-          
+
           // Archived: all messages in archived conversations
           if (conv.conversation.is_archived) {
             archivedCount++;
           }
         }
       } catch (err) {
-        console.error('Failed to load conversation for counting:', err);
+        console.error("Failed to load conversation for counting:", err);
       }
     }
-    
+
     setBasketCounts({
       inbox: inboxCount,
       pending: pendingCount,
       sent: sentCount,
-      archived: archivedCount
+      archived: archivedCount,
     });
   };
 
@@ -212,7 +237,7 @@ function App() {
       const response = await api.listConversations(activeDesk.id);
       setConversations(response.conversations || []);
     } catch (err) {
-      console.error('Failed to refresh conversations:', err);
+      console.error("Failed to refresh conversations:", err);
     }
   };
 
@@ -223,7 +248,7 @@ function App() {
       setNotifications(response.notifications || []);
       setUnreadCount(response.unread_count);
     } catch (err) {
-      console.error('Failed to refresh notifications:', err);
+      console.error("Failed to refresh notifications:", err);
     }
   };
 
@@ -231,16 +256,16 @@ function App() {
     const response = await api.login({ username, password });
     setAccount(response.account);
     setToken(response.token);
-    localStorage.setItem('account', JSON.stringify(response.account));
-    localStorage.setItem('token', response.token);
+    localStorage.setItem("account", JSON.stringify(response.account));
+    localStorage.setItem("token", response.token);
   };
 
   const handleRegister = async (request: RegisterRequest) => {
     const response = await api.register(request);
     setAccount(response.account);
     setToken(response.token);
-    localStorage.setItem('account', JSON.stringify(response.account));
-    localStorage.setItem('token', response.token);
+    localStorage.setItem("account", JSON.stringify(response.account));
+    localStorage.setItem("token", response.token);
   };
 
   const handleLogout = () => {
@@ -250,8 +275,8 @@ function App() {
     setActiveDesk(null);
     setConversations([]);
     setNotifications([]);
-    localStorage.removeItem('account');
-    localStorage.removeItem('token');
+    localStorage.removeItem("account");
+    localStorage.removeItem("token");
   };
 
   const handleCreateDesk = async (name: string) => {
@@ -261,7 +286,7 @@ function App() {
       const newDesk = await api.createDesk(account.id, { name });
       setDesks([...desks, newDesk]);
     } catch (err) {
-      console.error('Failed to create desk:', err);
+      console.error("Failed to create desk:", err);
     }
   };
 
@@ -269,61 +294,66 @@ function App() {
     if (!account) return;
 
     try {
-      const updatedAccount = await api.switchDesk(account.id, { desk_id: deskId });
+      const updatedAccount = await api.switchDesk(account.id, {
+        desk_id: deskId,
+      });
       setAccount(updatedAccount);
-      localStorage.setItem('account', JSON.stringify(updatedAccount));
+      localStorage.setItem("account", JSON.stringify(updatedAccount));
 
-      const desk = desks.find(d => d.id === deskId);
+      const desk = desks.find((d) => d.id === deskId);
       if (desk) {
         setActiveDesk(desk);
         setSelectedConversation(null);
       }
     } catch (err) {
-      console.error('Failed to switch desk:', err);
+      console.error("Failed to switch desk:", err);
     }
   };
 
   const handleMivClick = async (miv: ConversationMiv) => {
     // Check if we're switching from one inbox miv to another
-    const isPreviousMivInInbox = selectedMiv && 
-                                  selectedMiv.to === activeDesk?.id && 
-                                  !selectedMiv.read_at && 
-                                  selectedBasket === 'IN';
+    const isPreviousMivInInbox =
+      selectedMiv &&
+      selectedMiv.to === activeDesk?.id &&
+      !selectedMiv.read_at &&
+      selectedBasket === "IN";
     const isClickingDifferentMiv = selectedMiv && selectedMiv.id !== miv.id;
 
     // If switching from one inbox miv to another, mark previous as read
     if (isPreviousMivInInbox && isClickingDifferentMiv && activeDesk) {
       try {
         await api.markMivAsRead(selectedMiv.id, activeDesk.id);
-        
+
         // Get sender name for toast
         const getSenderName = (deskId: string): string => {
           const contact = contacts.find((c) => c.desk_id_ref === deskId);
           if (contact) return contact.name;
           // Format as phone number
           if (deskId.length === 10) {
-            return `${deskId.slice(0, 4)}-${deskId.slice(4, 6)}-${deskId.slice(6)}`;
+            return `${deskId.slice(0, 4)}-${deskId.slice(4, 6)}-${deskId.slice(
+              6
+            )}`;
           }
           return deskId;
         };
-        
+
         const senderName = getSenderName(selectedMiv.from);
         setToastMessage(`Moved Miv from ${senderName} to Pending`);
-        
+
         // Refresh basket counts and list after a short delay to ensure backend is updated
         setTimeout(async () => {
-          setBasketRefreshKey(prev => prev + 1);
+          setBasketRefreshKey((prev) => prev + 1);
           const response = await api.listConversations(activeDesk.id);
           await calculateBasketCounts(response.conversations, activeDesk.id);
         }, 100);
       } catch (err) {
-        console.error('Failed to mark previous miv as read:', err);
+        console.error("Failed to mark previous miv as read:", err);
       }
     }
 
     // Set the newly selected miv
     setSelectedMiv(miv);
-    
+
     // When clicking a miv in a basket, automatically mark it as read if it's incoming and unread
     if (miv.to === activeDesk?.id && !miv.read_at) {
       try {
@@ -332,7 +362,7 @@ function App() {
         const updatedMiv = { ...miv, read_at: new Date().toISOString() };
         setSelectedMiv(updatedMiv);
       } catch (err) {
-        console.error('Failed to mark miv as read:', err);
+        console.error("Failed to mark miv as read:", err);
       }
     }
   };
@@ -341,25 +371,31 @@ function App() {
     if (!activeDesk || !selectedMiv) return;
 
     try {
-      await api.replyToConversation(selectedMiv.conversation_id, activeDesk.id, { 
-        body,
-        is_ack: isAck 
-      });
-      
+      await api.replyToConversation(
+        selectedMiv.conversation_id,
+        activeDesk.id,
+        {
+          body,
+          is_ack: isAck,
+          font_family: activeDesk.font_family,
+          font_size: activeDesk.font_size,
+        }
+      );
+
       // Clear the selected miv immediately to remove it from view
       setSelectedMiv(null);
-      
+
       // Refresh conversations to update basket counts and lists
       await refreshConversations();
-      
+
       // Recalculate basket counts
       const response = await api.listConversations(activeDesk.id);
       await calculateBasketCounts(response.conversations, activeDesk.id);
-      
+
       // Force basket view to refresh
-      setBasketRefreshKey(prev => prev + 1);
+      setBasketRefreshKey((prev) => prev + 1);
     } catch (err) {
-      console.error('Failed to reply:', err);
+      console.error("Failed to reply:", err);
     }
   };
 
@@ -369,29 +405,32 @@ function App() {
     try {
       // Clear the selected miv immediately to remove it from view
       setSelectedMiv(null);
-      
+
       // Refresh conversations to update basket counts and lists
       await refreshConversations();
-      
+
       // Recalculate basket counts
       const response = await api.listConversations(activeDesk.id);
       await calculateBasketCounts(response.conversations, activeDesk.id);
-      
+
       // Force basket view to refresh
-      setBasketRefreshKey(prev => prev + 1);
+      setBasketRefreshKey((prev) => prev + 1);
     } catch (err) {
-      console.error('Failed to forget miv:', err);
+      console.error("Failed to forget miv:", err);
     }
   };
 
   const handleConversationClick = async (conv: ConversationWithLatest) => {
     try {
       // Pass desk_id to automatically mark messages as read
-      const response = await api.getConversation(conv.conversation.id, activeDesk?.id);
+      const response = await api.getConversation(
+        conv.conversation.id,
+        activeDesk?.id
+      );
       setSelectedConversation(response);
-      setCurrentView('conversations');
+      setCurrentView("conversations");
     } catch (err) {
-      console.error('Failed to load conversation:', err);
+      console.error("Failed to load conversation:", err);
     }
   };
 
@@ -399,22 +438,31 @@ function App() {
     if (!activeDesk) return;
 
     try {
-      await api.createConversation(activeDesk.id, request);
-      
+      // Convert CreateMivRequest to CreateConversationRequest (they have the same fields now)
+      const conversationRequest = {
+        to: request.to,
+        subject: request.subject,
+        body: request.body,
+        font_family: request.font_family,
+        font_size: request.font_size,
+      };
+
+      await api.createConversation(activeDesk.id, conversationRequest);
+
       // Redirect to inbox instead of conversations screen
-      setSelectedBasket('IN');
-      setCurrentView('baskets');
+      setSelectedBasket("IN");
+      setCurrentView("baskets");
       setSelectedMiv(null);
-      
+
       // Refresh conversations and basket counts
       await refreshConversations();
       const convResponse = await api.listConversations(activeDesk.id);
       await calculateBasketCounts(convResponse.conversations, activeDesk.id);
-      
+
       // Force basket view to refresh
-      setBasketRefreshKey(prev => prev + 1);
+      setBasketRefreshKey((prev) => prev + 1);
     } catch (err) {
-      console.error('Failed to create conversation:', err);
+      console.error("Failed to create conversation:", err);
       throw err;
     }
   };
@@ -423,17 +471,24 @@ function App() {
     if (!activeDesk || !selectedConversation) return;
 
     try {
-      await api.replyToConversation(selectedConversation.conversation.id, activeDesk.id, { 
-        body,
-        is_ack: isAck 
-      });
-      
+      await api.replyToConversation(
+        selectedConversation.conversation.id,
+        activeDesk.id,
+        {
+          body,
+          is_ack: isAck,
+        }
+      );
+
       // Reload conversation
-      const response = await api.getConversation(selectedConversation.conversation.id, activeDesk.id);
+      const response = await api.getConversation(
+        selectedConversation.conversation.id,
+        activeDesk.id
+      );
       setSelectedConversation(response);
       await refreshConversations();
     } catch (err) {
-      console.error('Failed to reply:', err);
+      console.error("Failed to reply:", err);
     }
   };
 
@@ -441,16 +496,19 @@ function App() {
     if (notification.conversation_id) {
       try {
         // Pass desk_id to automatically mark messages as read
-        const response = await api.getConversation(notification.conversation_id, activeDesk?.id);
+        const response = await api.getConversation(
+          notification.conversation_id,
+          activeDesk?.id
+        );
         setSelectedConversation(response);
-        setCurrentView('conversations');
+        setCurrentView("conversations");
 
         if (!notification.read) {
           await api.markNotificationAsRead(notification.id);
           await refreshNotifications();
         }
       } catch (err) {
-        console.error('Failed to load conversation from notification:', err);
+        console.error("Failed to load conversation from notification:", err);
       }
     }
   };
@@ -460,16 +518,16 @@ function App() {
       await api.markNotificationAsRead(notificationId);
       await refreshNotifications();
     } catch (err) {
-      console.error('Failed to mark notification as read:', err);
+      console.error("Failed to mark notification as read:", err);
     }
   };
 
   const handleDeskUpdated = (updatedDesk: Desk) => {
     // Update active desk with new settings
     setActiveDesk(updatedDesk);
-    
+
     // Update desks list
-    setDesks(desks.map(d => d.id === updatedDesk.id ? updatedDesk : d));
+    setDesks(desks.map((d) => (d.id === updatedDesk.id ? updatedDesk : d)));
   };
 
   if (loading) {
@@ -496,7 +554,7 @@ function App() {
     <div className="app">
       <div className="sidebar">
         <div className="sidebar-header">
-          <button 
+          <button
             className="mobile-menu-btn"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
@@ -506,7 +564,7 @@ function App() {
           <h1>Missiv</h1>
           <div className="mobile-header-actions">
             {selectedMiv && (
-              <button 
+              <button
                 className="mobile-back-btn"
                 onClick={() => setSelectedMiv(null)}
                 aria-label="Back to basket"
@@ -514,10 +572,10 @@ function App() {
                 ←
               </button>
             )}
-            {currentView !== 'compose' && (
-              <button 
+            {currentView !== "compose" && (
+              <button
                 className="mobile-compose-btn"
-                onClick={() => setCurrentView('compose')}
+                onClick={() => setCurrentView("compose")}
                 aria-label="Compose new message"
               >
                 ✏️ Compose
@@ -538,20 +596,24 @@ function App() {
         />
 
         <button
-          onClick={() => setCurrentView('compose')}
+          onClick={() => setCurrentView("compose")}
           className="compose-btn"
         >
           + New Conversation
         </button>
 
-        <nav className={`nav-menu ${mobileMenuOpen ? 'open' : ''}`}>
+        <nav className={`nav-menu ${mobileMenuOpen ? "open" : ""}`}>
           <div className="nav-section">
             <h4>Baskets</h4>
             <button
-              className={currentView === 'baskets' && selectedBasket === 'IN' ? 'active' : ''}
+              className={
+                currentView === "baskets" && selectedBasket === "IN"
+                  ? "active"
+                  : ""
+              }
               onClick={() => {
-                setCurrentView('baskets');
-                setSelectedBasket('IN');
+                setCurrentView("baskets");
+                setSelectedBasket("IN");
                 setSelectedMiv(null);
                 setMobileMenuOpen(false);
               }}
@@ -560,10 +622,14 @@ function App() {
               <span className="count-badge">{basketCounts.inbox}</span>
             </button>
             <button
-              className={currentView === 'baskets' && selectedBasket === 'PENDING' ? 'active' : ''}
+              className={
+                currentView === "baskets" && selectedBasket === "PENDING"
+                  ? "active"
+                  : ""
+              }
               onClick={() => {
-                setCurrentView('baskets');
-                setSelectedBasket('PENDING');
+                setCurrentView("baskets");
+                setSelectedBasket("PENDING");
                 setSelectedMiv(null);
                 setMobileMenuOpen(false);
               }}
@@ -572,10 +638,14 @@ function App() {
               <span className="count-badge">{basketCounts.pending}</span>
             </button>
             <button
-              className={currentView === 'baskets' && selectedBasket === 'SENT' ? 'active' : ''}
+              className={
+                currentView === "baskets" && selectedBasket === "SENT"
+                  ? "active"
+                  : ""
+              }
               onClick={() => {
-                setCurrentView('baskets');
-                setSelectedBasket('SENT');
+                setCurrentView("baskets");
+                setSelectedBasket("SENT");
                 setSelectedMiv(null);
                 setMobileMenuOpen(false);
               }}
@@ -588,19 +658,23 @@ function App() {
           <div className="nav-section">
             <h4>Other</h4>
             <button
-              className={currentView === 'conversations' ? 'active' : ''}
+              className={currentView === "conversations" ? "active" : ""}
               onClick={() => {
-                setCurrentView('conversations');
+                setCurrentView("conversations");
                 setMobileMenuOpen(false);
               }}
             >
               💬 Conversations
             </button>
             <button
-              className={currentView === 'baskets' && selectedBasket === 'ARCHIVED' ? 'active' : ''}
+              className={
+                currentView === "baskets" && selectedBasket === "ARCHIVED"
+                  ? "active"
+                  : ""
+              }
               onClick={() => {
-                setCurrentView('baskets');
-                setSelectedBasket('ARCHIVED');
+                setCurrentView("baskets");
+                setSelectedBasket("ARCHIVED");
                 setSelectedMiv(null);
                 setMobileMenuOpen(false);
               }}
@@ -608,18 +682,18 @@ function App() {
               📁 Archived
             </button>
             <button
-              className={currentView === 'contacts' ? 'active' : ''}
+              className={currentView === "contacts" ? "active" : ""}
               onClick={() => {
-                setCurrentView('contacts');
+                setCurrentView("contacts");
                 setMobileMenuOpen(false);
               }}
             >
               👥 Contacts
             </button>
             <button
-              className={currentView === 'notifications' ? 'active' : ''}
+              className={currentView === "notifications" ? "active" : ""}
               onClick={() => {
-                setCurrentView('notifications');
+                setCurrentView("notifications");
                 setMobileMenuOpen(false);
               }}
             >
@@ -631,9 +705,9 @@ function App() {
           <div className="nav-section">
             <h4>Account</h4>
             <button
-              className={currentView === 'settings' ? 'active' : ''}
+              className={currentView === "settings" ? "active" : ""}
               onClick={() => {
-                setCurrentView('settings');
+                setCurrentView("settings");
                 setMobileMenuOpen(false);
               }}
             >
@@ -651,8 +725,8 @@ function App() {
         </nav>
 
         <div className="sidebar-footer">
-          <button 
-            onClick={() => setCurrentView('settings')} 
+          <button
+            onClick={() => setCurrentView("settings")}
             className="btn-settings"
             title="Settings"
           >
@@ -665,26 +739,26 @@ function App() {
       </div>
 
       {/* Mobile overlay */}
-      <div 
-        className={`mobile-overlay ${mobileMenuOpen ? 'open' : ''}`}
+      <div
+        className={`mobile-overlay ${mobileMenuOpen ? "open" : ""}`}
         onClick={() => setMobileMenuOpen(false)}
       ></div>
 
       <div className="main-content">
-        {currentView === 'settings' ? (
-          <Settings 
-            desk={activeDesk} 
-            onClose={() => setCurrentView('baskets')}
+        {currentView === "settings" ? (
+          <Settings
+            desk={activeDesk}
+            onClose={() => setCurrentView("baskets")}
             onDeskUpdated={handleDeskUpdated}
           />
-        ) : currentView === 'compose' ? (
+        ) : currentView === "compose" ? (
           <ComposeMiv
             onSend={handleSendConversation}
-            onCancel={() => setCurrentView('baskets')}
+            onCancel={() => setCurrentView("baskets")}
             deskId={activeDesk.id}
             desk={activeDesk}
           />
-        ) : currentView === 'notifications' ? (
+        ) : currentView === "notifications" ? (
           <div className="notifications-view">
             <NotificationPanel
               notifications={notifications}
@@ -692,11 +766,15 @@ function App() {
               onMarkAsRead={handleMarkNotificationAsRead}
             />
           </div>
-        ) : currentView === 'contacts' ? (
+        ) : currentView === "contacts" ? (
           <ContactManager deskId={activeDesk.id} />
-        ) : currentView === 'baskets' ? (
+        ) : currentView === "baskets" ? (
           <>
-            <div className={`basket-list-container ${selectedMiv ? 'mobile-hidden' : ''}`}>
+            <div
+              className={`basket-list-container ${
+                selectedMiv ? "mobile-hidden" : ""
+              }`}
+            >
               <BasketView
                 key={basketRefreshKey}
                 deskId={activeDesk.id}
@@ -706,7 +784,11 @@ function App() {
                 onBasketChange={setSelectedBasket}
               />
             </div>
-            <div className={`basket-detail-container ${selectedMiv ? 'mobile-fullscreen' : ''}`}>
+            <div
+              className={`basket-detail-container ${
+                selectedMiv ? "mobile-fullscreen" : ""
+              }`}
+            >
               {selectedMiv ? (
                 <MivDetailWithContext
                   miv={selectedMiv}
@@ -726,7 +808,9 @@ function App() {
           <>
             <div className="conversation-list-container">
               <ConversationList
-                conversations={conversations.filter(conv => !conv.conversation.is_archived)}
+                conversations={conversations.filter(
+                  (conv) => !conv.conversation.is_archived
+                )}
                 selectedConversationId={selectedConversation?.conversation.id}
                 onConversationClick={handleConversationClick}
                 currentDeskId={activeDesk.id}
@@ -751,10 +835,7 @@ function App() {
         )}
       </div>
       {toastMessage && (
-        <Toast
-          message={toastMessage}
-          onClose={() => setToastMessage(null)}
-        />
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
       )}
     </div>
   );

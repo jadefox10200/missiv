@@ -556,6 +556,8 @@ func (s *Server) createConversation(c *gin.Context) {
 		Body:           base64.StdEncoding.EncodeToString([]byte(req.Body)),
 		State:          models.StateSENT, // Use SENT state for newly created mivs
 		IsEncrypted:    false,
+		FontFamily:     req.FontFamily,
+		FontSize:       req.FontSize,
 	}
 
 	if err := s.storage.CreateConversationMiv(miv); err != nil {
@@ -638,6 +640,8 @@ func (s *Server) replyToConversation(c *gin.Context) {
 		State:          models.StateSENT, // Use SENT state for replies
 		IsEncrypted:    false,
 		IsAck:          req.IsAck,
+		FontFamily:     req.FontFamily,
+		FontSize:       req.FontSize,
 	}
 
 	if err := s.storage.CreateConversationMiv(miv); err != nil {

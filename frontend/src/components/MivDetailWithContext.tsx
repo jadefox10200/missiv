@@ -9,6 +9,7 @@ import {
 } from "../types";
 import * as api from "../api/client";
 import { uploadPlugin } from "../utils/ckEditorUploadAdapter";
+import { parseClosureAndSignature } from "../utils/messageTemplate";
 import "./MivDetailWithContext.css";
 
 interface MivDetailWithContextProps {
@@ -35,6 +36,7 @@ function MivDetailWithContext({
   const [ackBody, setAckBody] = useState("");
   const [showForgetConfirm, setShowForgetConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [showAddContactModal, setShowAddContactModal] = useState(false);
@@ -57,15 +59,17 @@ function MivDetailWithContext({
         setSelectedMiv(currentMiv);
 
         // Mark message as read (move from IN to PENDING) if it's currently in IN state
-        if (currentMiv.state === 'IN') {
+        if (currentMiv.state === "IN") {
           try {
-            await api.updateMivState(currentMiv.id, { state: 'PENDING' as const });
+            await api.updateMivState(currentMiv.id, {
+              state: "PENDING" as const,
+            });
             // Update local state to reflect the change
-            const updatedMiv = { ...currentMiv, state: 'PENDING' as const };
+            const updatedMiv = { ...currentMiv, state: "PENDING" as const };
             setSelectedMiv(updatedMiv);
             // Also update in conversation if it exists
             if (convResponse.mivs) {
-              const updatedMivs = convResponse.mivs.map(m => 
+              const updatedMivs = convResponse.mivs.map((m) =>
                 m.id === currentMiv.id ? updatedMiv : m
               );
               setConversation({ ...convResponse, mivs: updatedMivs });
@@ -88,6 +92,52 @@ function MivDetailWithContext({
     setSelectedMiv(clickedMiv);
   };
 
+  const handleShowReply = () => {
+    // Auto-load salutation and closure for replies (not ACK)
+    const salutationTemplate =
+      currentDesk?.default_salutation || "Dear [User],";
+    const closureStr = currentDesk?.default_closure || "Sincerely,";
+
+    // Find the recipient (the person we're replying to)
+    const recipientDeskId =
+      selectedMiv.from === currentDeskId ? selectedMiv.to : selectedMiv.from;
+
+    // Find contact info for proper name lookup (same logic as compose)
+    const contact = contacts.find((c) => c.desk_id_ref === recipientDeskId);
+    let recipientName = "Sir/Madam";
+    if (contact) {
+      recipientName =
+        contact.greeting_name || contact.first_name || contact.name;
+    }
+
+    // Replace [User] placeholder with the recipient's greeting name
+    const salutation = salutationTemplate.replace(/\[User\]/gi, recipientName);
+
+    // Parse closure and signature
+    const { closure, signature } = parseClosureAndSignature(closureStr);
+
+    // Build HTML content like the compose view
+    const parts = [];
+    parts.push(`<p>${salutation}</p>`);
+    parts.push("<p><br></p>"); // Empty paragraph for content
+    parts.push("<p><br></p>"); // Another empty paragraph
+    if (signature) {
+      const signatureHtml = signature
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line)
+        .join("<br>");
+      parts.push(`<p>${closure}</p>`);
+      parts.push(`<p>${signatureHtml}</p>`);
+    } else {
+      parts.push(`<p>${closure}</p>`);
+    }
+
+    const initialContent = parts.join("");
+    setReplyBody(initialContent);
+    setShowReply(true);
+  };
+
   const handleReplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyBody.trim()) return;
@@ -107,6 +157,8 @@ function MivDetailWithContext({
       is_encrypted: false,
       is_ack: false,
       is_forgotten: false,
+      font_family: currentDesk?.font_family,
+      font_size: currentDesk?.font_size,
     };
 
     // Update conversation immediately
@@ -160,6 +212,8 @@ function MivDetailWithContext({
       is_encrypted: false,
       is_ack: true,
       is_forgotten: false,
+      font_family: currentDesk?.font_family,
+      font_size: currentDesk?.font_size,
     };
 
     // Update conversation immediately
@@ -341,328 +395,373 @@ function MivDetailWithContext({
       {/* Miv content - flexible height */}
       <div className="miv-content-area">
         <div className="miv-detail-content">
-        <div className="epistle-document">
-          {/* Epistle-style header with formal layout */}
-          <div className="epistle-header">
-            <div className="epistle-header-left">
-              <div className="epistle-field">
-                <span className="epistle-field-label">To:</span>
-                <span className="epistle-field-value">
-                  {getDisplayName(selectedMiv.to)}
-                </span>
-                {!isContact(selectedMiv.to) && !isOwnDeskId(selectedMiv.to) && (
-                  <button
-                    className="btn-add-contact-inline"
-                    onClick={() => openAddContactModal(selectedMiv.to)}
-                    title="Add as contact"
-                  >
-                    + Add Contact
-                  </button>
-                )}
+          <div className="epistle-document">
+            {/* Epistle-style header with formal layout */}
+            <div className="epistle-header">
+              <div className="epistle-header-left">
+                <div className="epistle-field">
+                  <span className="epistle-field-label">To:</span>
+                  <span className="epistle-field-value">
+                    {getDisplayName(selectedMiv.to)}
+                  </span>
+                  {!isContact(selectedMiv.to) &&
+                    !isOwnDeskId(selectedMiv.to) && (
+                      <button
+                        className="btn-add-contact-inline"
+                        onClick={() => openAddContactModal(selectedMiv.to)}
+                        title="Add as contact"
+                      >
+                        + Add Contact
+                      </button>
+                    )}
+                </div>
+                <div className="epistle-field">
+                  <span className="epistle-field-label">From:</span>
+                  <span className="epistle-field-value">
+                    {getDisplayName(selectedMiv.from)}
+                  </span>
+                  {!isContact(selectedMiv.from) &&
+                    !isOwnDeskId(selectedMiv.from) && (
+                      <button
+                        className="btn-add-contact-inline"
+                        onClick={() => openAddContactModal(selectedMiv.from)}
+                        title="Add as contact"
+                      >
+                        + Add Contact
+                      </button>
+                    )}
+                </div>
               </div>
-              <div className="epistle-field">
-                <span className="epistle-field-label">From:</span>
-                <span className="epistle-field-value">
-                  {getDisplayName(selectedMiv.from)}
-                </span>
-                {!isContact(selectedMiv.from) &&
-                  !isOwnDeskId(selectedMiv.from) && (
-                    <button
-                      className="btn-add-contact-inline"
-                      onClick={() => openAddContactModal(selectedMiv.from)}
-                      title="Add as contact"
-                    >
-                      + Add Contact
-                    </button>
-                  )}
+              <div className="epistle-header-right">
+                <div className="epistle-field">
+                  <span className="epistle-field-value">
+                    {formatDate(selectedMiv.created_at)}
+                  </span>
+                </div>
+                <div className="epistle-field epistle-sequence">
+                  <span className="epistle-field-value">
+                    Message #{selectedMiv.seq_no}
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="epistle-header-right">
-              <div className="epistle-field">
-                <span className="epistle-field-value">
-                  {formatDate(selectedMiv.created_at)}
-                </span>
-              </div>
-              <div className="epistle-field epistle-sequence">
-                <span className="epistle-field-value">
-                  Message #{selectedMiv.seq_no}
-                </span>
-              </div>
+
+            {/* Centered subject */}
+            <div className="epistle-subject">
+              <h2>{selectedMiv.subject}</h2>
             </div>
-          </div>
 
-          {/* Centered subject */}
-          <div className="epistle-subject">
-            <h2>{selectedMiv.subject}</h2>
-          </div>
-
-          {/* Body content */}
-          <div
-            className="epistle-body"
-            style={{
-              fontFamily: currentDesk?.font_family || "Georgia, serif",
-              fontSize: currentDesk?.font_size || "14px",
-            }}
-          >
-            {selectedMiv.is_ack && <span className="ack-badge">[ACK] </span>}
-            <div
-              className={`epistle-content ${
-                currentDesk?.auto_indent ? "auto-indent" : ""
-              }`}
-              dangerouslySetInnerHTML={{ __html: atob(selectedMiv.body) }}
-            />
-          </div>
-        </div>
-
-        <div className="miv-actions">
-          {selectedMiv.to === currentDeskId &&
-            !showReply &&
-            !showAckConfirm &&
-            !showForgetConfirm &&
-            !showDeleteConfirm && (
-              <>
-                {selectedMiv.is_ack ? (
-                  // For ACK mivs, show "Answer" and "Delete" buttons
-                  <>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => setShowReply(true)}
-                    >
-                      Answer
-                    </button>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => setShowDeleteConfirm(true)}
-                    >
-                      Delete
-                    </button>
-                  </>
-                ) : (
-                  // For non-ACK mivs, show "Reply" and "Send ACK" buttons
-                  <>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => setShowReply(true)}
-                    >
-                      Reply
-                    </button>
-                    <button
-                      className="btn btn-ack"
-                      onClick={() => setShowAckConfirm(true)}
-                    >
-                      Send ACK
-                    </button>
-                  </>
-                )}
-              </>
-            )}
-
-          {/* Add forget button for sent messages */}
-          {selectedMiv.from === currentDeskId &&
-            !selectedMiv.is_forgotten &&
-            selectedMiv.state === "SENT" &&
-            !showForgetConfirm && (
-              <button
-                className="btn btn-forget"
-                onClick={() => setShowForgetConfirm(true)}
-                title="Stop tracking replies for this message"
-              >
-                Forget
-              </button>
-            )}
-
-          {selectedMiv.is_forgotten && (
-            <span className="forgotten-label">
-              This message has been forgotten
-            </span>
-          )}
-        </div>
-
-        {showForgetConfirm && (
-          <div className="forget-confirm">
-            <p>
-              Are you sure you want to forget this message? It will be removed
-              from your SENT basket and you will no longer track replies to it.
-            </p>
-            <div className="forget-actions">
-              <button onClick={handleForget} className="btn btn-danger">
-                Yes, Forget This Message
-              </button>
-              <button
-                onClick={() => setShowForgetConfirm(false)}
-                className="btn"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {showDeleteConfirm && (
-          <div className="delete-confirm">
-            <p>
-              Are you sure you want to delete this conversation? The
-              conversation will be archived and removed from your inbox.
-            </p>
-            <div className="delete-actions">
-              <button onClick={handleDelete} className="btn btn-danger">
-                Yes, Archive This Conversation
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="btn"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {showAckConfirm && (
-          <div className="ack-confirm">
-            <h3>Send Acknowledgment</h3>
-            <p>
-              Send an acknowledgment message? The recipient can reply to
-              continue the conversation or delete it to end.
-            </p>
-            <textarea
-              className="ack-body"
-              value={ackBody}
-              onChange={(e) => setAckBody(e.target.value)}
-              placeholder="Optional: Type your acknowledgment message..."
-              rows={4}
-            />
-            <div className="ack-actions">
-              <button onClick={handleAck} className="btn btn-danger">
-                Yes, Send ACK
-              </button>
-              <button
-                onClick={() => {
-                  setShowAckConfirm(false);
-                  setAckBody("");
+            {/* Body content */}
+            <div className="epistle-body">
+              {selectedMiv.is_ack && <span className="ack-badge">[ACK] </span>}
+              <div
+                className={`epistle-content ${
+                  currentDesk?.auto_indent ? "auto-indent" : ""
+                }`}
+                style={{
+                  fontFamily: selectedMiv.font_family || "Georgia, serif",
+                  fontSize: selectedMiv.font_size || "14px",
                 }}
-                className="btn"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {showReply && (
-          <form onSubmit={handleReplySubmit} className="reply-form">
-            <h3>Reply</h3>
-            <div className="editor-container">
-              <CKEditor
-                editor={ClassicEditor as any}
-                config={
-                  {
-                    extraPlugins: [uploadPlugin],
-                    toolbar: {
-                      items: [
-                        "undo",
-                        "redo",
-                        "|",
-                        "heading",
-                        "|",
-                        "bold",
-                        "italic",
-                        "underline",
-                        "strikethrough",
-                        "|",
-                        "code",
-                        "subscript",
-                        "superscript",
-                        "|",
-                        "link",
-                        "insertTable",
-                        "imageUpload",
-                        "mediaEmbed",
-                        "|",
-                        "bulletedList",
-                        "numberedList",
-                        "|",
-                        "blockQuote",
-                        "horizontalLine",
-                      ],
-                    },
-                    image: {
-                      toolbar: [
-                        "imageStyle:alignLeft",
-                        "imageStyle:alignCenter",
-                        "imageStyle:alignRight",
-                        "|",
-                        "resizeImage",
-                      ],
-                    },
-                    heading: {
-                      options: [
-                        {
-                          model: "paragraph",
-                          title: "Paragraph",
-                          class: "ck-heading_paragraph",
-                        },
-                        {
-                          model: "heading1",
-                          view: "h1",
-                          title: "Heading 1",
-                          class: "ck-heading_heading1",
-                        },
-                        {
-                          model: "heading2",
-                          view: "h2",
-                          title: "Heading 2",
-                          class: "ck-heading_heading2",
-                        },
-                        {
-                          model: "heading3",
-                          view: "h3",
-                          title: "Heading 3",
-                          class: "ck-heading_heading3",
-                        },
-                      ],
-                    },
-                    placeholder: "Write your reply...",
-                  } as any
-                }
-                data={replyBody}
-                onChange={(event, editor) => {
-                  const data = editor.getData();
-                  setReplyBody(data);
-                }}
+                dangerouslySetInnerHTML={{ __html: atob(selectedMiv.body) }}
               />
             </div>
-            <div className="reply-actions">
-              <button type="submit" className="btn btn-primary">
-                Send Reply
-              </button>
-              {!selectedMiv.is_ack && (
+          </div>
+
+          <div className="miv-actions">
+            {selectedMiv.to === currentDeskId &&
+              !showReply &&
+              !showAckConfirm &&
+              !showForgetConfirm &&
+              !showDeleteConfirm && (
+                <>
+                  {selectedMiv.is_ack ? (
+                    // For ACK mivs, show "Answer" and "Delete" buttons
+                    <>
+                      <button
+                        className="btn btn-primary"
+                        onClick={handleShowReply}
+                      >
+                        Answer
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => setShowDeleteConfirm(true)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  ) : (
+                    // For non-ACK mivs, show "Reply" and "Send ACK" buttons
+                    <>
+                      <button
+                        className="btn btn-primary"
+                        onClick={handleShowReply}
+                      >
+                        Reply
+                      </button>
+                      <button
+                        className="btn btn-ack"
+                        onClick={() => setShowAckConfirm(true)}
+                      >
+                        Send ACK
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+
+            {/* Add forget button for sent messages */}
+            {selectedMiv.from === currentDeskId &&
+              !selectedMiv.is_forgotten &&
+              selectedMiv.state === "SENT" &&
+              !showForgetConfirm && (
                 <button
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={() => {
-                    setShowReply(false);
-                    setShowAckConfirm(true);
-                  }}
+                  className="btn btn-forget"
+                  onClick={() => setShowForgetConfirm(true)}
+                  title="Stop tracking replies for this message"
                 >
-                  Send ACK
+                  Forget
                 </button>
               )}
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => {
-                  setShowReply(false);
-                  setReplyBody("");
-                }}
-              >
-                Cancel
-              </button>
+
+            {selectedMiv.is_forgotten && (
+              <span className="forgotten-label">
+                This message has been forgotten
+              </span>
+            )}
+          </div>
+
+          {showForgetConfirm && (
+            <div className="forget-confirm">
+              <p>
+                Are you sure you want to forget this message? It will be removed
+                from your SENT basket and you will no longer track replies to
+                it.
+              </p>
+              <div className="forget-actions">
+                <button onClick={handleForget} className="btn btn-danger">
+                  Yes, Forget This Message
+                </button>
+                <button
+                  onClick={() => setShowForgetConfirm(false)}
+                  className="btn"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </form>
-        )}
+          )}
+
+          {showDeleteConfirm && (
+            <div className="delete-confirm">
+              <p>
+                Are you sure you want to delete this conversation? The
+                conversation will be archived and removed from your inbox.
+              </p>
+              <div className="delete-actions">
+                <button onClick={handleDelete} className="btn btn-danger">
+                  Yes, Archive This Conversation
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="btn"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {showAckConfirm && (
+            <div className="ack-confirm">
+              <h3>Send Acknowledgment</h3>
+              <p>
+                Send an acknowledgment message? The recipient can reply to
+                continue the conversation or delete it to end.
+              </p>
+              <textarea
+                className="ack-body"
+                value={ackBody}
+                onChange={(e) => setAckBody(e.target.value)}
+                placeholder="Optional: Type your acknowledgment message..."
+                rows={4}
+              />
+              <div className="ack-actions">
+                <button onClick={handleAck} className="btn btn-danger">
+                  Yes, Send ACK
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAckConfirm(false);
+                    setAckBody("");
+                  }}
+                  className="btn"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {showReply && (
+            <form onSubmit={handleReplySubmit} className="reply-form">
+              <h3>Reply</h3>
+              <div className="editor-container">
+                <CKEditor
+                  editor={ClassicEditor as any}
+                  config={
+                    {
+                      extraPlugins: [uploadPlugin],
+                      toolbar: {
+                        items: [
+                          "undo",
+                          "redo",
+                          "|",
+                          "heading",
+                          "|",
+                          "bold",
+                          "italic",
+                          "underline",
+                          "strikethrough",
+                          "|",
+                          "code",
+                          "subscript",
+                          "superscript",
+                          "|",
+                          "link",
+                          "insertTable",
+                          "imageUpload",
+                          "mediaEmbed",
+                          "|",
+                          "bulletedList",
+                          "numberedList",
+                          "|",
+                          "blockQuote",
+                          "horizontalLine",
+                        ],
+                      },
+                      image: {
+                        toolbar: [
+                          "imageStyle:alignLeft",
+                          "imageStyle:alignCenter",
+                          "imageStyle:alignRight",
+                          "|",
+                          "resizeImage",
+                        ],
+                      },
+                      heading: {
+                        options: [
+                          {
+                            model: "paragraph",
+                            title: "Paragraph",
+                            class: "ck-heading_paragraph",
+                          },
+                          {
+                            model: "heading1",
+                            view: "h1",
+                            title: "Heading 1",
+                            class: "ck-heading_heading1",
+                          },
+                          {
+                            model: "heading2",
+                            view: "h2",
+                            title: "Heading 2",
+                            class: "ck-heading_heading2",
+                          },
+                          {
+                            model: "heading3",
+                            view: "h3",
+                            title: "Heading 3",
+                            class: "ck-heading_heading3",
+                          },
+                        ],
+                      },
+                      placeholder: "Write your reply...",
+                    } as any
+                  }
+                  data={replyBody}
+                  onChange={(event, editor) => {
+                    const data = editor.getData();
+                    setReplyBody(data);
+                  }}
+                />
+              </div>
+              <div className="reply-actions">
+                <button type="submit" className="btn btn-primary">
+                  Send Reply
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-info"
+                  onClick={() => setShowPreview(true)}
+                >
+                  Preview
+                </button>
+                {!selectedMiv.is_ack && (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => {
+                      setShowReply(false);
+                      setShowAckConfirm(true);
+                    }}
+                  >
+                    Send ACK
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowReply(false);
+                    setReplyBody("");
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+
+          {showPreview && (
+            <div
+              className="preview-modal-overlay"
+              onClick={() => setShowPreview(false)}
+            >
+              <div
+                className="preview-modal"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="preview-header">
+                  <h3>Reply Preview</h3>
+                  <button
+                    className="close-button"
+                    onClick={() => setShowPreview(false)}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div
+                  className="preview-content"
+                  style={{
+                    fontFamily: currentDesk?.font_family || "Georgia, serif",
+                    fontSize: currentDesk?.font_size || "14px",
+                  }}
+                  dangerouslySetInnerHTML={{ __html: replyBody }}
+                />
+                <div className="preview-actions">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setShowPreview(false)}
+                  >
+                    Close Preview
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
 
       {/* Add Contact Modal */}
       {showAddContactModal && (
